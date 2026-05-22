@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react"
 import { WeatherLayer } from "./weather-layer"
 import maplibregl from "maplibre-gl"
 import { VehicleLayer } from "./vehicle-layer"
+import WeatherDetailPanel from "./weather-detail-panel"
 
 import Map, {
   Marker,
@@ -55,6 +56,9 @@ export function InteractiveMap({
 
   const [loading, setLoading] =
     useState(false)
+
+  const [selectedWeatherPoint, setSelectedWeatherPoint] =
+    useState<any | null>(null)
 
   const {
     routeGeoJSON,
@@ -565,14 +569,19 @@ export function InteractiveMap({
         {mapMode !== "heatmap" && (
 
           <WeatherLayer
-            visibleWeatherPoints={
-              visibleWeatherPoints
-            }
+            visibleWeatherPoints={visibleWeatherPoints}
             setPopupInfo={setPopupInfo}
+            setSelectedWeatherPoint={setSelectedWeatherPoint}
           />
 
         )}
-
+        
+        {selectedWeatherPoint && (
+          <WeatherDetailPanel
+            point={selectedWeatherPoint}
+            onClose={() => setSelectedWeatherPoint(null)}
+          />
+        )}
       </Map>
 
     </div>

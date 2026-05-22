@@ -30,8 +30,6 @@ export function AnalyticsOverlay({
 
   const overlayRef = useRef<HTMLDivElement>(null)
 
-  if (!routeGeoJSON) return null
-
   useEffect(() => {
 
     function handleClickOutside(e: MouseEvent) {
@@ -59,25 +57,29 @@ export function AnalyticsOverlay({
 
   }, [setMinimizedAnalytics])
 
-  /* ── MINIMIZED ── */
+  if (!routeGeoJSON) return null
+
+  /* ───────────────── MINIMIZED ───────────────── */
 
   if (minimizedAnalytics) {
 
     return (
 
-      <div className="
-        absolute
-        top-4
-        left-4
-        z-40
-      ">
+      <div
+        className="
+          absolute
+          top-4
+          left-4
+          z-40
+        "
+      >
 
         <div
           onClick={() => setMinimizedAnalytics(false)}
           className="
             flex
             items-center
-            gap-3
+            gap-2
 
             cursor-pointer
 
@@ -89,8 +91,8 @@ export function AnalyticsOverlay({
             bg-black/80
             backdrop-blur-3xl
 
-            px-4
-            py-2.5
+            px-3
+            py-2
 
             shadow-[0_10px_40px_rgba(0,0,0,0.45)]
 
@@ -105,7 +107,7 @@ export function AnalyticsOverlay({
             <div className="
               text-[8px]
               uppercase
-              tracking-[0.25em]
+              tracking-[0.22em]
               text-white/30
             ">
               Distance
@@ -113,19 +115,19 @@ export function AnalyticsOverlay({
 
             <div className="
               mt-0.5
-              text-lg
+              text-base
               font-bold
               text-white
               leading-none
             ">
-              {distance} km
+              {distance}
             </div>
 
           </div>
 
           <div className="
             w-px
-            h-7
+            h-6
             bg-white/10
           " />
 
@@ -136,7 +138,7 @@ export function AnalyticsOverlay({
             <div className="
               text-[8px]
               uppercase
-              tracking-[0.25em]
+              tracking-[0.22em]
               text-white/30
             ">
               ETA
@@ -144,7 +146,7 @@ export function AnalyticsOverlay({
 
             <div className="
               mt-0.5
-              text-lg
+              text-base
               font-bold
               text-emerald-400
               leading-none
@@ -156,18 +158,18 @@ export function AnalyticsOverlay({
 
           <div className="
             w-px
-            h-7
+            h-6
             bg-white/10
           " />
 
-          {/* BEST MODE */}
+          {/* MODE */}
 
           <div>
 
             <div className="
               text-[8px]
               uppercase
-              tracking-[0.25em]
+              tracking-[0.22em]
               text-white/30
             ">
               Best
@@ -175,7 +177,7 @@ export function AnalyticsOverlay({
 
             <div className="
               mt-0.5
-              text-sm
+              text-xs
               font-semibold
               text-white
               leading-none
@@ -197,17 +199,17 @@ export function AnalyticsOverlay({
               items-center
               justify-center
 
-              w-7
-              h-7
+              w-6
+              h-6
 
-              rounded-xl
+              rounded-lg
 
               bg-emerald-500/10
               border
               border-emerald-400/10
 
               text-emerald-300
-              text-sm
+              text-xs
 
               hover:bg-emerald-500/20
 
@@ -225,7 +227,7 @@ export function AnalyticsOverlay({
 
   }
 
-  /* ── FULL ── */
+  /* ───────────────── FULL ───────────────── */
 
   return (
 
@@ -237,9 +239,9 @@ export function AnalyticsOverlay({
         left-4
         z-40
 
-        w-[210px]
+        w-[200px]
 
-        max-h-[60vh]
+        max-h-[52vh]
 
         rounded-[24px]
 
@@ -253,6 +255,12 @@ export function AnalyticsOverlay({
         shadow-[0_20px_70px_rgba(0,0,0,0.52)]
 
         overflow-hidden
+
+        before:absolute
+        before:inset-0
+        before:bg-white/[0.02]
+        before:pointer-events-none
+        before:rounded-[24px]
       "
     >
 
@@ -260,14 +268,15 @@ export function AnalyticsOverlay({
         className="
           h-full
 
-          max-h-[60vh]
+          max-h-[52vh]
 
           overflow-y-auto
+          overflow-x-hidden
 
           px-3
           py-3
 
-          space-y-2.5
+          space-y-2
 
           scrollbar-thin
           scrollbar-thumb-white/10
@@ -275,7 +284,7 @@ export function AnalyticsOverlay({
         "
       >
 
-        {/* ── STATS ── */}
+        {/* STATS */}
 
         <div
           className="
@@ -292,7 +301,7 @@ export function AnalyticsOverlay({
 
           <div className="
             flex
-            items-center
+            items-start
             justify-between
             gap-2
           ">
@@ -304,7 +313,7 @@ export function AnalyticsOverlay({
               <div className="
                 text-[8px]
                 uppercase
-                tracking-[0.25em]
+                tracking-[0.22em]
                 text-white/25
               ">
                 Distance
@@ -312,19 +321,12 @@ export function AnalyticsOverlay({
 
               <div className="
                 mt-1
-                text-[26px]
+                text-[24px]
                 font-bold
                 text-white
                 leading-none
               ">
                 {distance}
-                <span className="
-                  text-sm
-                  text-white/35
-                  ml-1
-                ">
-                  km
-                </span>
               </div>
 
             </div>
@@ -336,7 +338,7 @@ export function AnalyticsOverlay({
               <div className="
                 text-[8px]
                 uppercase
-                tracking-[0.25em]
+                tracking-[0.22em]
                 text-white/25
               ">
                 ETA
@@ -344,7 +346,7 @@ export function AnalyticsOverlay({
 
               <div className="
                 mt-1
-                text-[20px]
+                text-[18px]
                 font-bold
                 text-emerald-400
                 leading-none
@@ -367,9 +369,10 @@ export function AnalyticsOverlay({
           {/* RELOCATE */}
 
           <div className="
-            mt-3
+            mt-2
             flex
-            justify-end
+            items-center
+            justify-center
           ">
 
             <button
@@ -390,7 +393,7 @@ export function AnalyticsOverlay({
                 bg-white/[0.04]
 
                 text-white/60
-                text-base
+                text-sm
 
                 hover:bg-white/[0.08]
 
@@ -404,7 +407,7 @@ export function AnalyticsOverlay({
 
         </div>
 
-        {/* ── WEATHER CARDS ── */}
+        {/* WEATHER */}
 
         <div className="space-y-1.5">
 
@@ -422,8 +425,8 @@ export function AnalyticsOverlay({
 
                   bg-white/[0.04]
 
-                  px-3
-                  py-2.5
+                  px-2.5
+                  py-2
                 "
               >
 
@@ -441,7 +444,7 @@ export function AnalyticsOverlay({
 
                     <div className="
                       truncate
-                      text-[13px]
+                      text-[12px]
                       font-semibold
                       text-white
                     ">
@@ -449,7 +452,7 @@ export function AnalyticsOverlay({
                     </div>
 
                     <div className="
-                      text-[11px]
+                      text-[10px]
                       text-white/35
                       mt-0.5
                     ">
@@ -459,7 +462,7 @@ export function AnalyticsOverlay({
                   </div>
 
                   <div className="
-                    text-[15px]
+                    text-[14px]
                     font-bold
                     text-white
                     shrink-0
@@ -477,7 +480,7 @@ export function AnalyticsOverlay({
 
         </div>
 
-        {/* ── AI INSIGHTS ── */}
+        {/* AI */}
 
         <div
           className="
@@ -494,8 +497,6 @@ export function AnalyticsOverlay({
             py-3
           "
         >
-
-          {/* HEADER */}
 
           <div className="
             flex
@@ -514,12 +515,14 @@ export function AnalyticsOverlay({
             </div>
 
             <div className="text-sm">
-              ☀️
+              {travelAdvice.includes("Storm")
+                ? "⛈️"
+                : travelAdvice.includes("rain")
+                ? "🌧️"
+                : "☀️"}
             </div>
 
           </div>
-
-          {/* ADVICE CARD */}
 
           <div className="
             rounded-[14px]
@@ -538,10 +541,7 @@ export function AnalyticsOverlay({
               gap-2
             ">
 
-              <div className="
-                text-base
-                shrink-0
-              ">
+              <div className="text-base">
                 🌤️
               </div>
 
@@ -571,8 +571,6 @@ export function AnalyticsOverlay({
             </div>
 
           </div>
-
-          {/* MODE + STATUS */}
 
           <div className="
             mt-2.5

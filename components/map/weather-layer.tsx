@@ -5,11 +5,13 @@ import { Marker } from "react-map-gl/maplibre"
 interface WeatherLayerProps {
   visibleWeatherPoints: any[]
   setPopupInfo: any
+  setSelectedWeatherPoint: any
 }
 
 export function WeatherLayer({
   visibleWeatherPoints,
-  setPopupInfo
+  setPopupInfo,
+  setSelectedWeatherPoint
 }: WeatherLayerProps) {
 
   return (
@@ -59,6 +61,7 @@ export function WeatherLayer({
               key={index}
               longitude={point.coord[0]}
               latitude={point.coord[1]}
+              onClick={() => setSelectedWeatherPoint(point)}
             >
 
               <div
