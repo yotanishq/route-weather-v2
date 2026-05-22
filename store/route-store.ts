@@ -1,44 +1,33 @@
-// store/route-store.ts
-
 import { create } from "zustand"
 
 interface RouteStore {
 
   routeGeoJSON: any
+  weatherPoints: any[]
+
+  distance: number
+  duration: number
+
+  travelAdvice: string
 
   setRouteGeoJSON: (
     data: any
   ) => void
 
-  routeColor: string
-
-  setRouteColor: (
-    color: string
-  ) => void
-
-  weatherPoints: any[]
-
   setWeatherPoints: (
     points: any[]
   ) => void
 
-  vehiclePosition:
-    [number, number] | null
-
-  setVehiclePosition: (
-    pos: [number, number] | null
-  ) => void
-
-  distance: string
-
   setDistance: (
-    value: string
+    distance: number
   ) => void
-
-  duration: string
 
   setDuration: (
-    value: string
+    duration: number
+  ) => void
+
+  setTravelAdvice: (
+    advice: string
   ) => void
 }
 
@@ -47,44 +36,37 @@ export const useRouteStore =
 
     routeGeoJSON: null,
 
+    weatherPoints: [],
+
+    distance: 0,
+
+    duration: 0,
+
+    travelAdvice: "",
+
     setRouteGeoJSON: (data) =>
       set({
         routeGeoJSON: data
       }),
-
-    routeColor: "#34d399",
-
-    setRouteColor: (color) =>
-      set({
-        routeColor: color
-      }),
-
-    weatherPoints: [],
 
     setWeatherPoints: (points) =>
       set({
         weatherPoints: points
       }),
 
-    vehiclePosition: null,
-
-    setVehiclePosition: (pos) =>
+    setDistance: (distance) =>
       set({
-        vehiclePosition: pos
+        distance
       }),
 
-    distance: "--",
-
-    setDistance: (value) =>
+    setDuration: (duration) =>
       set({
-        distance: value
+        duration
       }),
 
-    duration: "--",
-
-    setDuration: (value) =>
+    setTravelAdvice: (advice) =>
       set({
-        duration: value
+        travelAdvice: advice
       })
 
   }))

@@ -1,17 +1,16 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState } from "react"
+import { motion } from "framer-motion"
 
-import { motion } from "framer-motion";
-
-import { Navbar } from "@/components/navbar";
-import { HeroSection } from "@/components/hero-section";
-import { RoutePlanner } from "@/components/route-planner";
-import { InteractiveMap } from "@/components/map/interactive-map";
-import { WeatherAnalytics } from "@/components/weather-analytics";
-import { TransportFeasibility } from "@/components/transport-feasibility";
-import { DashboardSections } from "@/components/dashboard-sections";
-import { Footer } from "@/components/footer";
+import { Navbar } from "@/components/navbar"
+import { HeroSection } from "@/components/hero-section"
+import { RoutePlanner } from "@/components/route-planner"
+import { InteractiveMap } from "@/components/map/interactive-map"
+import { WeatherAnalytics } from "@/components/weather-analytics"
+import { TransportFeasibility } from "@/components/transport-feasibility"
+import { DashboardSections } from "@/components/dashboard-sections"
+import { Footer } from "@/components/footer"
 
 export default function HomePage() {
 
@@ -30,17 +29,13 @@ export default function HomePage() {
 
       <Navbar />
 
-      {/* HERO */}
-
       <HeroSection />
 
-      {/* MAIN MAP SECTION */}
+      {/* MAIN MAP */}
 
       <section className="relative py-8 lg:py-12">
 
         <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/30 to-white pointer-events-none" />
-
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white to-transparent pointer-events-none" />
 
         <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -55,6 +50,7 @@ export default function HomePage() {
           >
 
             <div>
+
               <h2 className="text-2xl lg:text-3xl font-semibold text-foreground">
                 Route Intelligence
               </h2>
@@ -62,9 +58,10 @@ export default function HomePage() {
               <p className="text-muted-foreground mt-1">
                 Real-time weather visualization for your journey
               </p>
+
             </div>
 
-            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="hidden md:flex items-center gap-2">
 
               <span className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
 
@@ -78,11 +75,11 @@ export default function HomePage() {
 
           </motion.div>
 
-          {/* LAYOUT */}
+          {/* GRID */}
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
-            {/* LEFT SIDEBAR */}
+            {/* SIDEBAR */}
 
             <div className="xl:col-span-3 order-2 xl:order-1">
 
@@ -158,11 +155,7 @@ export default function HomePage() {
 
       </section>
 
-      {/* DASHBOARD */}
-
       <DashboardSections />
-
-      {/* FOOTER */}
 
       <Footer />
 
