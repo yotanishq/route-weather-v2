@@ -9,7 +9,9 @@ interface AnalyticsOverlayProps {
   adviceColor: string
   adviceEmoji: string
   minimizedAnalytics: boolean
-  setMinimizedAnalytics: React.Dispatch<React.SetStateAction<boolean>>
+  setMinimizedAnalytics: (
+  minimized: boolean
+) => void
 }
 
 export function AnalyticsOverlay({

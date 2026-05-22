@@ -2,7 +2,9 @@
 
 interface MapControlsProps {
   mapMode: "normal" | "terrain" | "heatmap"
-  setMapMode: React.Dispatch<React.SetStateAction<"normal" | "terrain" | "heatmap">>
+  setMapMode: (
+  mode: "normal" | "terrain" | "heatmap"
+) => void
 }
 
 export function MapControls({ mapMode, setMapMode }: MapControlsProps) {

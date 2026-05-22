@@ -25,38 +25,63 @@ export function HeatmapLayer({
     type: "FeatureCollection",
 
     features:
-      weatherPoints.map((point) => ({
+      weatherPoints.map((point) => {
 
-        type: "Feature",
+        const temp =
+          point.weather.main.temp
 
-        properties: {
+        let intensity = 0.2
 
-          temperature:
-            point.weather.main.temp,
+        /* TEMPERATURE RANGES */
 
-          intensity:
-            Math.min(
-              Math.max(
-                (
-                  point.weather.main.temp - 15
-                ) / 30,
-                0
-              ),
-              1
-            )
+        if (temp <= 0) {
+          intensity = 0.15
+        }
 
-        },
+        else if (temp <= 15) {
+          intensity = 0.28
+        }
 
-        geometry: {
+        else if (temp <= 25) {
+          intensity = 0.42
+        }
 
-          type: "Point",
+        else if (temp <= 35) {
+          intensity = 0.58
+        }
 
-          coordinates:
-            point.coord
+        else if (temp <= 40) {
+          intensity = 0.75
+        }
+
+        else {
+          intensity = 0.92
+        }
+
+        return {
+
+          type: "Feature",
+
+          properties: {
+
+            temperature: temp,
+
+            intensity
+
+          },
+
+          geometry: {
+
+            type: "Point",
+
+            coordinates:
+              point.coord
+
+          }
 
         }
 
-      }))
+      })
 
   }
 
@@ -74,51 +99,88 @@ export function HeatmapLayer({
 
         paint={{
 
+          /* HOW STRONG EACH POINT IS */
+
           "heatmap-weight": [
-  "interpolate",
-  ["linear"],
-  ["get", "intensity"],
-  0,   0.05,
-  0.3, 0.2,
-  0.6, 0.5,
-  1,   1
-],
-
-"heatmap-intensity": [
-  "interpolate",
-  ["linear"],
-  ["zoom"],
-  0,  0.3,
-  5,  0.6,
-  7,  1.0,
-  10, 1.5,
-  13, 2.0
-],
-
-"heatmap-radius": [
-  "interpolate",
-  ["linear"],
-  ["zoom"],
-  3,  12,
-  5,  18,
-  7,  26,
-  10, 36,
-  13, 48
-],
-          "heatmap-opacity": 0.88,
-
-          "heatmap-color": [
             "interpolate",
             ["linear"],
-            ["heatmap-density"],
-            0,   "rgba(0,0,0,0)",
-            0.2, "#0ea5e9",
-            0.4, "#22c55e",
-            0.6, "#eab308",
-            0.8, "#f97316",
-            1,   "#ef4444"
-          ]
+            ["get", "intensity"],
 
+            0, 0.08,
+            1, 1.15
+          ],
+
+          /* GLOBAL HEATMAP STRENGTH */
+
+          "heatmap-intensity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+
+            0, 0.55,
+            5, 1,
+            8, 1.6,
+            12, 2.2
+          ],
+
+          /* SPREAD */
+
+          "heatmap-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+
+            0, 14,
+            5, 24,
+            8, 40,
+            12, 62
+          ],
+
+          /* OVERALL VISIBILITY */
+
+          "heatmap-opacity": 0.74,
+
+          /* COLOR TRANSITIONS */
+
+          "heatmap-color": [
+
+  "interpolate",
+  ["linear"],
+  ["heatmap-density"],
+
+  0,
+  "rgba(0,0,0,0)",
+
+  /* deep cold */
+
+  0.12,
+  "rgba(0,120,255,0.38)",
+
+  /* cold */
+
+  0.25,
+  "rgba(0,210,255,0.45)",
+
+  /* pleasant */
+
+  0.42,
+  "rgba(0,255,170,0.52)",
+
+  /* warm */
+
+  0.58,
+  "rgba(255,230,0,0.68)",
+
+  /* hot */
+
+  0.76,
+  "rgba(255,145,0,0.8)",
+
+  /* extreme */
+
+  0.94,
+  "rgba(255,60,60,0.92)"
+]
         }}
       />
 

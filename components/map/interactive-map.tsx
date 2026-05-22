@@ -1,5 +1,5 @@
 "use client"
-
+import { useMapStore } from "@/store/map-store"
 import { HeatmapLayer } from "./heatmap-layer"
 import { MapControls } from "./map-controls"
 import { useEffect, useRef, useState } from "react"
@@ -36,15 +36,24 @@ export function InteractiveMap({
   const [loading, setLoading] = useState(false)
   const [distance, setDistance] = useState<string>("--")
   const [duration, setDuration] = useState<string>("--")
-  const [zoom, setZoom] = useState(4.5)
-  const [viewState, setViewState] = useState({
-    longitude: 78.9629,
-    latitude: 20.5937,
-    zoom: 4.5
-  })
-  const [mapMode, setMapMode] = useState<"normal" | "terrain" | "heatmap">("normal")
-  const [minimizedAnalytics, setMinimizedAnalytics] = useState(false)
-  const [popupInfo, setPopupInfo] = useState<any>(null)
+
+  const {
+  mapMode,
+  setMapMode,
+
+  minimizedAnalytics,
+  setMinimizedAnalytics,
+
+  popupInfo,
+  setPopupInfo,
+
+  zoom,
+  setZoom,
+
+  viewState,
+  setViewState
+
+} = useMapStore()
 
   const mapStyles = {
     normal: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
@@ -108,7 +117,7 @@ export function InteractiveMap({
       /* WEATHER — sample every 50 coords */
 
       const sampledPoints = coordinates.filter(
-        (_: any, index: number) => index % 50 === 0
+        (_: any, index: number) => index % 30 === 0
       )
 
       const weatherData = await Promise.all(
