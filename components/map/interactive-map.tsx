@@ -1,25 +1,17 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import maplibregl from "maplibre-gl"
-
-import Map, {
-  NavigationControl,
-  Popup
-} from "react-map-gl/maplibre"
-
-import "maplibre-gl/dist/maplibre-gl.css"
-
-import {
-  getCoordinates,
-  getRoute
-} from "@/lib/routing"
-
 import { HeatmapLayer } from "./heatmap-layer"
-import { RouteLayer } from "./route-layer"
-import { VehicleLayer } from "./vehicle-layer"
-import { WeatherLayer } from "./weather-layer"
 import { MapControls } from "./map-controls"
+import { useEffect, useRef, useState } from "react"
+import { WeatherLayer } from "./weather-layer"
+import maplibregl from "maplibre-gl"
+import { VehicleLayer } from "./vehicle-layer"
+import Map, { Marker, NavigationControl, Source } from "react-map-gl/maplibre"
+import { RouteLayer } from "./route-layer"
+import "maplibre-gl/dist/maplibre-gl.css"
+import { AnalyticsOverlay } from "./analytics-overlay"
+import { getCoordinates, getRoute } from "@/lib/routing"
+import { getWeather } from "@/lib/weather"
 
 interface InteractiveMapProps {
   startPlace: string
@@ -35,677 +27,302 @@ export function InteractiveMap({
 
   const mapRef = useRef<any>(null)
 
-  const [mapMode, setMapMode] =
-    useState<
-      "normal" |
-      "terrain" |
-      "heatmap"
-    >("normal")
+  const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
+  const [routeColor, setRouteColor] = useState("#34d399")
+  const [startCoords, setStartCoords] = useState<[number, number] | null>(null)
+  const [endCoords, setEndCoords] = useState<[number, number] | null>(null)
+  const [vehiclePosition, setVehiclePosition] = useState<[number, number] | null>(null)
+  const [weatherPoints, setWeatherPoints] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [distance, setDistance] = useState<string>("--")
+  const [duration, setDuration] = useState<string>("--")
+  const [zoom, setZoom] = useState(4.5)
+  const [viewState, setViewState] = useState({
+    longitude: 78.9629,
+    latitude: 20.5937,
+    zoom: 4.5
+  })
+  const [mapMode, setMapMode] = useState<"normal" | "terrain" | "heatmap">("normal")
+  const [minimizedAnalytics, setMinimizedAnalytics] = useState(false)
+  const [popupInfo, setPopupInfo] = useState<any>(null)
 
-  const [routeGeoJSON, setRouteGeoJSON] =
-    useState<any>(null)
-
-  const [
-    visibleWeatherPoints,
-    setVisibleWeatherPoints
-  ] = useState<any[]>([])
-
-  const [
-    vehiclePosition,
-    setVehiclePosition
-  ] = useState<
-    [number, number] | null
-  >(null)
-
-  const [distance, setDistance] =
-    useState("0 km")
-
-  const [duration, setDuration] =
-    useState("0h")
-
-  const [loading, setLoading] =
-    useState(false)
-
-  const [popupInfo, setPopupInfo] =
-    useState<any>(null)
-
-  const [
-    minimizedAnalytics,
-    setMinimizedAnalytics
-  ] = useState(false)
-
-  const routeColor = useMemo(() => {
-
-    if (
-      visibleWeatherPoints.some(
-        p =>
-          p.weather.weather[0].main ===
-          "Thunderstorm"
-      )
-    ) {
-      return "#ef4444"
-    }
-
-    if (
-      visibleWeatherPoints.some(
-        p =>
-          p.weather.weather[0].main ===
-          "Rain"
-      )
-    ) {
-      return "#38bdf8"
-    }
-
-    return "#f59e0b"
-
-  }, [visibleWeatherPoints])
-
-  useEffect(() => {
-
-    if (!triggerRoute) return
-
-    fetchRoute()
-
-  }, [triggerRoute])
-
-  async function getWeather(
-    lat: number,
-    lon: number
-  ) {
-
-    try {
-
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_KEY}&units=metric`
-      )
-
-      return await response.json()
-
-    }
-
-    catch {
-
-      return null
-
-    }
-
+  const mapStyles = {
+    normal: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
+    terrain: `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
+    heatmap: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
   }
 
   async function fetchRoute() {
+
+    if (!startPlace || !endPlace) {
+      alert("Please enter both locations")
+      return
+    }
 
     try {
 
       setLoading(true)
 
-      const start =
-        await getCoordinates(startPlace)
-
-      const end =
-        await getCoordinates(endPlace)
+      const start = await getCoordinates(startPlace)
+      const end = await getCoordinates(endPlace)
 
       if (!start || !end) {
-
         setLoading(false)
-
         return
-
       }
 
-      const data =
-        await getRoute(start, end)
+      setStartCoords(start as [number, number])
+      setEndCoords(end as [number, number])
 
-      const coordinates =
-        data.features[0]
-          .geometry.coordinates
-
-      setRouteGeoJSON(data)
-
-      /*
-      DISTANCE
-      */
-
-      setDistance(
-        `${(
-          data.features[0]
-            .properties.summary.distance / 1000
-        ).toFixed(1)} km`
+      const data = await getRoute(
+        start as [number, number],
+        end as [number, number]
       )
 
-      /*
-      DURATION
-      */
+      const coordinates = data.features[0].geometry.coordinates
 
-      const totalMinutes =
-        Math.floor(
-          data.features[0]
-            .properties.summary.duration / 60
-        )
-
-      const hours =
-        Math.floor(totalMinutes / 60)
-
-      const minutes =
-        totalMinutes % 60
-
-      setDuration(
-        `${hours}h ${minutes}m`
-      )
-
-      /*
-      WEATHER POINTS
-      */
-
-      const sampledPoints =
-        coordinates.filter(
-          (_: any, index: number) =>
-            index % 80 === 0
-        )
-
-      const weatherData =
-        await Promise.all(
-
-          sampledPoints.map(
-            async (coord: any) => {
-
-              const weather =
-                await getWeather(
-                  coord[1],
-                  coord[0]
-                )
-
-              return {
-                coord,
-                weather
-              }
-
-            }
-          )
-
-        )
-
-      const validWeather =
-        weatherData.filter(
-          point => point.weather
-        )
-
-      setVisibleWeatherPoints(
-        validWeather.slice(0, 10)
-      )
-
-      /*
-      FIT MAP
-      */
-
-      if (mapRef.current) {
-
-        const bounds =
-          coordinates.reduce(
-            (
-              bounds: any,
-              coord: any
-            ) => {
-
-              bounds.extend(coord)
-
-              return bounds
-
-            },
-            new maplibregl.LngLatBounds(
-              coordinates[0],
-              coordinates[0]
-            )
-          )
-
-        mapRef.current.fitBounds(
-          bounds,
-          {
-            padding: 100,
-            duration: 2000
-          }
-        )
-
-      }
-
-      /*
-      VEHICLE
-      */
+      /* VEHICLE ANIMATION */
 
       let currentIndex = 0
+      setVehiclePosition(coordinates[0])
 
-      const animation =
-        setInterval(() => {
+      const interval = setInterval(() => {
+        currentIndex += 1
+        if (currentIndex >= coordinates.length) {
+          clearInterval(interval)
+          return
+        }
+        setVehiclePosition(coordinates[currentIndex])
+      }, 120)
 
-          if (
-            currentIndex >=
-            coordinates.length
-          ) {
+      /* ROUTE STATS */
 
-            clearInterval(animation)
+      const summary = data.features[0].properties.summary
+      const distanceKm = (summary.distance / 1000).toFixed(1)
+      const durationHours = Math.floor(summary.duration / 3600)
+      const durationMinutes = Math.floor((summary.duration % 3600) / 60)
 
-            return
+      setDistance(`${distanceKm} km`)
+      setDuration(`${durationHours}h ${durationMinutes}m`)
 
-          }
+      /* WEATHER — sample every 50 coords */
 
-          setVehiclePosition(
-            coordinates[currentIndex]
-          )
-
-          currentIndex += 1
-
-        }, 120)
-
-      setLoading(false)
-
-    }
-
-    catch (error) {
-
-      console.error(error)
-
-      alert(
-        "Something went wrong while generating route"
+      const sampledPoints = coordinates.filter(
+        (_: any, index: number) => index % 50 === 0
       )
 
+      const weatherData = await Promise.all(
+  sampledPoints.map(async (coord: [number, number]) => {
+    const weather = await getWeather(coord[1], coord[0])
+    return { coord, weather }
+  })
+)
+
+// Deduplicate by city name — keep first occurrence only
+const seenCities = new Set<string>()
+const dedupedWeatherData = weatherData.filter((point) => {
+  const city = point.weather.name
+  if (seenCities.has(city)) return false
+  seenCities.add(city)
+  return true
+})
+
+setWeatherPoints(dedupedWeatherData)
+
+      /* ROUTE DANGER COLOR */
+
+      let dynamicRouteColor = "#34d399"
+
+      const hasStorm = weatherData.some(
+        point => point.weather.weather[0].main === "Thunderstorm"
+      )
+      const hasRain = weatherData.some(
+        point => point.weather.weather[0].main === "Rain"
+      )
+
+      if (hasStorm) dynamicRouteColor = "#ef4444"
+      else if (hasRain) dynamicRouteColor = "#f59e0b"
+
+      setRouteColor(dynamicRouteColor)
+      setRouteGeoJSON(data)
+
+      /* AUTO FIT */
+
+      const bounds = new maplibregl.LngLatBounds()
+      coordinates.forEach((coord: [number, number]) => {
+        bounds.extend(coord)
+      })
+
+      mapRef.current?.fitBounds(bounds, {
+        padding: 80,
+        duration: 2000,
+      })
+
+    } catch (err) {
+      console.log(err)
+      alert("Something went wrong while generating route")
+    } finally {
       setLoading(false)
-
     }
+  }
 
+  useEffect(() => {
+    if (triggerRoute > 0) {
+      fetchRoute()
+    }
+  }, [triggerRoute])
+
+  /* WEATHER DENSITY */
+
+  const visibleWeatherPoints = weatherPoints.filter((_, index) => {
+    if (zoom < 4) return index % 40 === 0
+    if (zoom < 5) return index % 24 === 0
+    if (zoom < 6) return index % 14 === 0
+    if (zoom < 7.5) return index % 8 === 0
+    if (zoom < 9) return index % 4 === 0
+    if (zoom < 11) return index % 2 === 0
+    return true
+  })
+
+  /* AI INSIGHTS */
+
+  const weatherConditions = weatherPoints.map(
+    point => point.weather.weather[0].main
+  )
+
+  const hasStorm = weatherConditions.includes("Thunderstorm")
+  const hasRain = weatherConditions.includes("Rain")
+  const hasSnow = weatherConditions.includes("Snow")
+
+  let travelAdvice = "Excellent travel conditions"
+  let adviceColor = "text-emerald-400"
+  let adviceEmoji = "✅"
+
+  if (hasStorm) {
+    travelAdvice = "Storm activity detected along route"
+    adviceColor = "text-red-500"
+    adviceEmoji = "⛈"
+  } else if (hasRain) {
+    travelAdvice = "Moderate rainfall expected"
+    adviceColor = "text-amber-500"
+    adviceEmoji = "🌧"
+  } else if (hasSnow) {
+    travelAdvice = "Snow conditions may affect visibility"
+    adviceColor = "text-blue-500"
+    adviceEmoji = "❄"
   }
 
   return (
 
-    <div className="
-      relative
-      w-full
-      h-[650px]
-      rounded-3xl
-      overflow-hidden
-      border
-      border-white/10
-      shadow-2xl
-    ">
+    <div className="relative w-full h-[75vh] rounded-3xl overflow-hidden border border-slate-200 shadow-2xl">
+
+      {/* LOADING */}
+
+      {loading && (
+        <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center">
+          <div className="px-5 py-3 rounded-2xl bg-white shadow-2xl border border-slate-200 text-sm font-medium text-slate-700">
+            Generating intelligent route...
+          </div>
+        </div>
+      )}
 
       <Map
+        terrain={mapMode === "terrain" ? { source: "terrain" } : undefined}
+        maxPitch={85}
         ref={mapRef}
-
         initialViewState={{
           longitude: 78.9629,
-          latitude: 22.5937,
-          zoom: 4
+          latitude: 20.5937,
+          zoom: 4.5,
+          pitch: 60,
+          bearing: -10
         }}
-
-        style={{
-          width: "100%",
-          height: "100%"
+        onMove={(e) => {
+          setZoom(e.viewState.zoom)
+          setViewState({
+            longitude: e.viewState.longitude,
+            latitude: e.viewState.latitude,
+            zoom: e.viewState.zoom
+          })
         }}
-
-        mapStyle="
-https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json
-"
-
+        mapStyle={mapStyles[mapMode]}
       >
 
-        <NavigationControl
-          position="top-right"
-        />
+        <NavigationControl position="top-right" />
 
         <MapControls
           mapMode={mapMode}
           setMapMode={setMapMode}
         />
 
-        {/* ROUTE */}
+        <Source
+          id="terrain"
+          type="raster-dem"
+          url={`https://api.maptiler.com/tiles/terrain-rgb/tiles.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`}
+          tileSize={256}
+        />
+
+        <AnalyticsOverlay
+          routeGeoJSON={routeGeoJSON}
+          distance={distance}
+          duration={duration}
+          visibleWeatherPoints={visibleWeatherPoints}
+          travelAdvice={travelAdvice}
+          adviceColor={adviceColor}
+          adviceEmoji={adviceEmoji}
+          minimizedAnalytics={minimizedAnalytics}
+          setMinimizedAnalytics={setMinimizedAnalytics}
+        />
 
         <RouteLayer
           routeGeoJSON={routeGeoJSON}
           routeColor={routeColor}
         />
 
+        {/* START MARKER */}
+
+        {startCoords && (
+          <Marker longitude={startCoords[0]} latitude={startCoords[1]}>
+            <div className="relative flex items-center justify-center">
+              <div className="absolute w-10 h-10 rounded-full bg-emerald-400/20 animate-ping" />
+              <div className="absolute w-6 h-6 rounded-full bg-emerald-400/40 blur-md" />
+              <div className="w-4 h-4 rounded-full bg-emerald-400 border-2 border-white shadow-[0_0_25px_rgba(52,211,153,0.95)]" />
+            </div>
+          </Marker>
+        )}
+
+        {/* END MARKER */}
+
+        {endCoords && (
+          <Marker longitude={endCoords[0]} latitude={endCoords[1]}>
+            <div className="relative flex items-center justify-center">
+              <div className="absolute w-10 h-10 rounded-full bg-red-400/20 animate-ping" />
+              <div className="absolute w-6 h-6 rounded-full bg-red-400/40 blur-md" />
+              <div className="w-4 h-4 rounded-full bg-red-400 border-2 border-white shadow-[0_0_25px_rgba(248,113,113,0.95)]" />
+            </div>
+          </Marker>
+        )}
+
+        <VehicleLayer vehiclePosition={vehiclePosition} />
+
         {/* HEATMAP */}
 
         {mapMode === "heatmap" && (
-
-          <HeatmapLayer
-            weatherPoints={
-              visibleWeatherPoints
-            }
-          />
-
+          <HeatmapLayer weatherPoints={weatherPoints} />
         )}
 
-        {/* WEATHER */}
+        {/* WEATHER MARKERS */}
 
-        {mapMode === "normal" && (
-
+        {mapMode !== "heatmap" && (
           <WeatherLayer
-            visibleWeatherPoints={
-              visibleWeatherPoints
-            }
-
-            setPopupInfo={
-              setPopupInfo
-            }
+            visibleWeatherPoints={visibleWeatherPoints}
+            setPopupInfo={setPopupInfo}
           />
-
-        )}
-
-        {/* VEHICLE */}
-
-        <VehicleLayer
-          vehiclePosition={
-            vehiclePosition
-          }
-        />
-
-        {/* POPUP */}
-
-        {popupInfo && (
-
-          <Popup
-            longitude={
-              popupInfo.coord[0]
-            }
-
-            latitude={
-              popupInfo.coord[1]
-            }
-
-            closeButton={true}
-
-            closeOnClick={false}
-
-            onClose={() =>
-              setPopupInfo(null)
-            }
-          >
-
-            <div className="
-              text-sm
-              text-slate-900
-            ">
-
-              <div className="
-                font-bold
-                mb-1
-              ">
-
-                {
-                  popupInfo.weather.name
-                }
-
-              </div>
-
-              <div>
-
-                {
-                  popupInfo.weather
-                    .weather[0].main
-                }
-
-              </div>
-
-              <div>
-
-                {Math.round(
-                  popupInfo.weather
-                    .main.temp
-                )}°C
-
-              </div>
-
-            </div>
-
-          </Popup>
-
         )}
 
       </Map>
 
-      {/* ANALYTICS */}
-
-      {routeGeoJSON && (
-
-        minimizedAnalytics ? (
-
-          <div className="
-            absolute
-            top-4
-            left-4
-            z-50
-            flex
-            items-center
-            gap-3
-            px-4
-            py-3
-            rounded-2xl
-            bg-black/80
-            backdrop-blur-xl
-            border
-            border-white/10
-          ">
-
-            <div>
-
-              <div className="
-                text-[10px]
-                uppercase
-                tracking-widest
-                text-slate-500
-              ">
-
-                Distance
-
-              </div>
-
-              <div className="
-                text-white
-                font-bold
-                text-lg
-              ">
-
-                {distance}
-
-              </div>
-
-            </div>
-
-            <div className="
-              w-px
-              h-10
-              bg-white/10
-            " />
-
-            <div>
-
-              <div className="
-                text-[10px]
-                uppercase
-                tracking-widest
-                text-slate-500
-              ">
-
-                ETA
-
-              </div>
-
-              <div className="
-                text-emerald-400
-                font-bold
-                text-lg
-              ">
-
-                {duration}
-
-              </div>
-
-            </div>
-
-            <button
-              onClick={() =>
-                setMinimizedAnalytics(false)
-              }
-
-              className="
-                ml-2
-                w-8
-                h-8
-                rounded-full
-                bg-white/10
-                text-white
-              "
-            >
-
-              +
-
-            </button>
-
-          </div>
-
-        ) : (
-
-          <div className="
-            absolute
-            top-4
-            left-4
-            z-50
-            flex
-            gap-3
-          ">
-
-            <div className="
-              bg-black/80
-              backdrop-blur-xl
-              border
-              border-white/10
-              rounded-2xl
-              px-5
-              py-3
-            ">
-
-              <div className="
-                text-[10px]
-                uppercase
-                tracking-widest
-                text-slate-500
-              ">
-
-                Distance
-
-              </div>
-
-              <div className="
-                text-white
-                text-2xl
-                font-bold
-              ">
-
-                {distance}
-
-              </div>
-
-            </div>
-
-            <div className="
-              bg-black/80
-              backdrop-blur-xl
-              border
-              border-emerald-500/20
-              rounded-2xl
-              px-5
-              py-3
-              relative
-            ">
-
-              <button
-                onClick={() =>
-                  setMinimizedAnalytics(true)
-                }
-
-                className="
-                  absolute
-                  -top-2
-                  -right-2
-                  w-7
-                  h-7
-                  rounded-full
-                  bg-white/10
-                  backdrop-blur-xl
-                  border
-                  border-white/10
-                  text-white
-                  text-sm
-                "
-              >
-
-                —
-
-              </button>
-
-              <div className="
-                text-[10px]
-                uppercase
-                tracking-widest
-                text-slate-500
-              ">
-
-                ETA
-
-              </div>
-
-              <div className="
-                text-emerald-400
-                text-2xl
-                font-bold
-              ">
-
-                {duration}
-
-              </div>
-
-            </div>
-
-          </div>
-
-        )
-
-      )}
-
-      {/* LOADING */}
-
-      {loading && (
-
-        <div className="
-          absolute
-          inset-0
-          bg-black/50
-          backdrop-blur-sm
-          flex
-          items-center
-          justify-center
-          z-50
-        ">
-
-          <div className="
-            px-6
-            py-3
-            rounded-2xl
-            bg-white/10
-            border
-            border-white/10
-            text-white
-            backdrop-blur-xl
-          ">
-
-            Generating intelligent route...
-
-          </div>
-
-        </div>
-
-      )}
-
     </div>
 
   )
-
 }
