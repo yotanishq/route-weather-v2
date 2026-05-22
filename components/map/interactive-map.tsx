@@ -410,6 +410,10 @@ export function InteractiveMap({
 
         }}
 
+        onClick={() => {
+          setSelectedWeatherPoint(null)
+        }}
+
         mapStyle={mapStyles[mapMode]}
       >
 
@@ -570,8 +574,9 @@ export function InteractiveMap({
 
           <WeatherLayer
             visibleWeatherPoints={visibleWeatherPoints}
-            setPopupInfo={setPopupInfo}
             setSelectedWeatherPoint={setSelectedWeatherPoint}
+            selectedWeatherPoint={selectedWeatherPoint}
+            mapRef={mapRef}
           />
 
         )}

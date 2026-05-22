@@ -4,14 +4,16 @@ import { Marker } from "react-map-gl/maplibre"
 
 interface WeatherLayerProps {
   visibleWeatherPoints: any[]
-  setPopupInfo: any
   setSelectedWeatherPoint: any
+  selectedWeatherPoint: any
+  mapRef: any
 }
 
 export function WeatherLayer({
   visibleWeatherPoints,
-  setPopupInfo,
-  setSelectedWeatherPoint
+  setSelectedWeatherPoint,
+  selectedWeatherPoint,
+  mapRef
 }: WeatherLayerProps) {
 
   return (
@@ -55,20 +57,37 @@ export function WeatherLayer({
             emoji = "🌫"
           }
 
+          const isSelected =
+            selectedWeatherPoint &&
+            selectedWeatherPoint.coord[0] === point.coord[0] &&
+            selectedWeatherPoint.coord[1] === point.coord[1]
+
           return (
 
             <Marker
               key={index}
               longitude={point.coord[0]}
               latitude={point.coord[1]}
-              onClick={() => setSelectedWeatherPoint(point)}
+              onClick={(e) => {
+                e.originalEvent.stopPropagation()
+                setSelectedWeatherPoint(point)
+                
+                if (mapRef.current) {
+                  const currentZoom = mapRef.current.getZoom()
+                  const targetZoom = Math.min(currentZoom + 1, 9)
+                  
+                  mapRef.current.flyTo({
+                    center: [point.coord[0], point.coord[1]],
+                    zoom: targetZoom,
+                    duration: 1200,
+                    essential: true
+                  })
+                }
+              }}
             >
 
               <div
-                onClick={() =>
-                  setPopupInfo(point)
-                }
-                className="
+                className={`
                   relative
                   px-3
                   py-2
@@ -80,11 +99,22 @@ export function WeatherLayer({
                   shadow-2xl
                   min-w-[120px]
                   cursor-pointer
-                  hover:scale-105
                   transition-all
                   duration-200
-                "
+                  ${isSelected ? 'scale-110 border-emerald-400/60' : 'hover:scale-105'}
+                `}
               >
+                {isSelected && (
+                  <div className="
+                    absolute
+                    -inset-1
+                    -z-10
+                    rounded-2xl
+                    bg-emerald-400/30
+                    blur-sm
+                    animate-pulse
+                  " />
+                )}
 
                 <div className="flex items-center gap-2">
 
