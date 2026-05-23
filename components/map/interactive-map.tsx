@@ -105,6 +105,14 @@ export function InteractiveMap({
 
   } = useMapStore()
 
+  useEffect(() => {
+    if (isFullscreen) {
+      setSelectedWeatherPoint(null)
+      setSelectedAccidentZone(null)
+      setMinimizedAnalytics(true)
+    }
+  }, [isFullscreen])
+
   const mapStyles = {
     normal:
       `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
@@ -726,6 +734,7 @@ export function InteractiveMap({
             <WeatherDetailPanel
               point={selectedWeatherPoint}
               onClose={() => setSelectedWeatherPoint(null)}
+              compact={!isFullscreen}
             />
           )}
 

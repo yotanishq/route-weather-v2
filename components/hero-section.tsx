@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Play, MapPin, Cloud, Zap } from "lucide-react";
+import { Sparkles, MapPin, Cloud, Zap } from "lucide-react";
 
 export function HeroSection() {
   return (
@@ -93,64 +92,6 @@ export function HeroSection() {
             Plan smarter routes, avoid delays, and travel with confidence.
           </motion.p>
 
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button 
-                size="lg" 
-                className="h-14 px-8 rounded-2xl bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white font-medium shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 gap-2"
-              >
-                Start Planning Free
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="h-14 px-8 rounded-2xl border-slate-200 hover:bg-slate-50 gap-2"
-              >
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                  <Play className="w-3 h-3 text-foreground ml-0.5" />
-                </div>
-                Watch Demo
-              </Button>
-            </motion.div>
-          </motion.div>
-
-          {/* Trust indicators - realistic */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-12 flex items-center justify-center gap-8 text-sm text-muted-foreground"
-          >
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 border-2 border-white"
-                  />
-                ))}
-              </div>
-              <span>Join thousands of travelers</span>
-            </div>
-            <span className="hidden sm:block text-slate-300">|</span>
-            <div className="hidden sm:flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <svg key={i} className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 20 20">
-                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                </svg>
-              ))}
-              <span className="ml-1">Loved by users</span>
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>

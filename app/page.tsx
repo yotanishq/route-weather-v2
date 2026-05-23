@@ -11,6 +11,7 @@ import { WeatherAnalytics } from "@/components/weather-analytics"
 import { TransportFeasibility } from "@/components/transport-feasibility"
 import { DashboardSections } from "@/components/dashboard-sections"
 import { Footer } from "@/components/footer"
+import { useRouteStore } from "@/store/route-store"
 
 export default function HomePage() {
 
@@ -20,8 +21,44 @@ export default function HomePage() {
   const [triggerRoute, setTriggerRoute] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  const { distance, duration, travelAdvice, weatherPoints } = useRouteStore()
+
   function handleGenerateRoute() {
     setTriggerRoute(prev => prev + 1)
+  }
+
+  function getWeatherCondition() {
+    if (!weatherPoints || weatherPoints.length === 0) return { text: "--", color: "text-foreground" }
+    
+    const weather = weatherPoints[0].weather
+    const condition = weather.weather[0].main.toLowerCase()
+    const description = weather.weather[0].description.toLowerCase()
+    
+    if (condition.includes("clear") || condition.includes("sunny")) {
+      return { text: "Good", color: "text-green-500" }
+    } else if (condition.includes("rain") || condition.includes("drizzle") || condition.includes("hail") || description.includes("rain") || description.includes("drizzle")) {
+      return { text: "Moderate", color: "text-yellow-500" }
+    } else if (condition.includes("snow") || condition.includes("thunderstorm") || description.includes("heavy")) {
+      return { text: "Bad", color: "text-red-500" }
+    } else if (condition.includes("clouds") || condition.includes("mist") || condition.includes("fog")) {
+      return { text: "Moderate", color: "text-yellow-500" }
+    }
+    
+    return { text: "Good", color: "text-green-500" }
+  }
+
+  function formatDurationHours() {
+    if (!duration) return "--"
+    const hours = Math.floor(duration / 3600)
+    const minutes = Math.floor((duration % 3600) / 60)
+    
+    if (hours > 0 && minutes > 0) {
+      return `${hours}h ${minutes}m`
+    } else if (hours > 0) {
+      return `${hours}h`
+    } else {
+      return `${minutes}m`
+    }
   }
 
   useEffect(() => {
@@ -124,6 +161,10 @@ export default function HomePage() {
                     setStartPlace={setStartPlace}
                     setEndPlace={setEndPlace}
                     onGenerateRoute={handleGenerateRoute}
+                    distance={distance ? `${distance} km` : undefined}
+                    duration={formatDurationHours()}
+                    condition={getWeatherCondition().text}
+                    conditionColor={getWeatherCondition().color}
                   />
 
                 </div>

@@ -2,7 +2,27 @@
 
 import { motion } from "framer-motion"
 import { FullscreenCinematicAccidentPanel } from "./fullscreen-cinematic-accident-panel"
-import { useState, useEffect } from "react"
+import { getWeatherEmoji } from "@/lib/weather-panel-utils"
+import { useState, useEffect, type CSSProperties } from "react"
+
+const railCardSurface: CSSProperties = {
+  backgroundColor: "rgba(8, 10, 14, 0.82)",
+  border: "1px solid rgba(255, 255, 255, 0.06)",
+  boxShadow: "0 0 30px rgba(0, 255, 180, 0.03)",
+  backdropFilter: "blur(18px)",
+  WebkitBackdropFilter: "blur(18px)"
+}
+
+const sectionLabelClass =
+  "mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/[0.34]"
+
+const accidentDangerSurface: CSSProperties = {
+  background:
+    "linear-gradient(180deg, rgba(80, 8, 18, 0.58), rgba(35, 5, 10, 0.82))",
+  border: "1px solid rgba(255, 80, 100, 0.2)",
+  backdropFilter: "blur(18px)",
+  WebkitBackdropFilter: "blur(18px)"
+}
 
 interface FullscreenMapLayoutProps {
   isFullscreen: boolean
@@ -47,59 +67,62 @@ function generateAIInsight(weatherData?: any) {
   const weather = weatherData.weather[0]
   const main = weather.main.toLowerCase()
   const description = weather.description
-  const temp = weatherData.temp
-  const feelsLike = weatherData.feels_like
-  const humidity = weatherData.humidity
-  const visibility = weatherData.visibility ? (weatherData.visibility / 1000).toFixed(1) : 'N/A'
-  const windSpeed = weatherData.wind_speed
-  const windDirection = weatherData.wind_deg ? getWindDirection(weatherData.wind_deg) : 'N/A'
-  
+  const temp = weatherData.main?.temp
+  const feelsLike = weatherData.main?.feels_like
+  const visibility = weatherData.visibility
+    ? (weatherData.visibility / 1000).toFixed(1)
+    : "N/A"
+  const windSpeed = weatherData.wind?.speed ?? 0
+  const windDirection = weatherData.wind?.deg
+    ? getWindDirection(weatherData.wind.deg)
+    : "N/A"
+
   let mainInsight = ""
   let secondaryInsight = ""
-  let icon = ""
-  
-  // Generate insights based on actual weather conditions
-  if (main === 'clear' || main === 'sunny') {
-    if (parseFloat(visibility) >= 10) {
-      mainInsight = "Clear visibility and dry conditions."
-      secondaryInsight = "Favorable travel conditions on this route."
-      icon = "☀️"
+
+  if (main === "clear" || main === "sunny") {
+    if (parseFloat(String(visibility)) >= 10) {
+      mainInsight = "Excellent travel conditions"
+      secondaryInsight =
+        "Clear skies and optimal visibility for smooth travel."
     } else {
-      mainInsight = "Clear skies with moderate visibility."
-      secondaryInsight = "Good conditions for travel ahead."
-      icon = "☀️"
+      mainInsight = "Good travel conditions"
+      secondaryInsight =
+        "Clear skies with favorable visibility for travel ahead."
     }
-  } else if (main === 'rain' || main === 'drizzle') {
-    mainInsight = "Wet road conditions."
-    secondaryInsight = "Drive cautiously due to slippery surfaces."
-    icon = "�️"
-  } else if (main === 'thunderstorm') {
-    mainInsight = "Severe weather detected."
-    secondaryInsight = "Storm conditions - avoid travel if possible."
-    icon = "⛈️"
-  } else if (main === 'mist' || main === 'fog' || main === 'haze') {
-    mainInsight = "Reduced visibility ahead."
-    secondaryInsight = "Extra caution advised for low visibility."
-    icon = "�️"
-  } else if (main === 'clouds') {
-    mainInsight = "Overcast conditions on route."
-    secondaryInsight = "Moderate visibility with stable conditions."
-    icon = "☁️"
-  } else if (main === 'snow') {
-    mainInsight = "Snow conditions detected."
-    secondaryInsight = "Hazardous winter driving conditions."
-    icon = "❄️"
+  } else if (main === "rain" || main === "drizzle") {
+    mainInsight = "Moderate rainfall expected"
+    secondaryInsight =
+      "Wet road conditions detected. Drive cautiously on this route."
+  } else if (main === "thunderstorm") {
+    mainInsight = "Storm activity detected"
+    secondaryInsight =
+      "Severe weather along the route. Avoid travel if possible."
+  } else if (main === "mist" || main === "fog" || main === "haze") {
+    mainInsight = "Reduced visibility ahead"
+    secondaryInsight =
+      "Low visibility conditions. Extra caution advised while driving."
+  } else if (main === "clouds") {
+    mainInsight = "Stable travel conditions"
+    secondaryInsight =
+      "Overcast skies with moderate visibility along your route."
+  } else if (main === "snow") {
+    mainInsight = "Snow conditions detected"
+    secondaryInsight =
+      "Hazardous winter driving conditions. Plan extra travel time."
   } else if (windSpeed > 10) {
-    mainInsight = "Strong crosswinds detected."
-    secondaryInsight = `${windDirection} winds at ${windSpeed.toFixed(1)} m/s.`
-    icon = "💨"
+    mainInsight = "Strong crosswinds detected"
+    secondaryInsight = `${windDirection} winds at ${windSpeed.toFixed(1)} m/s along exposed sections.`
   } else {
-    mainInsight = `${description.charAt(0).toUpperCase() + description.slice(1)}.`
-    secondaryInsight = `Temperature: ${temp}°C, feels like ${feelsLike}°C.`
-    icon = "🌤️"
+    mainInsight = "Monitor travel conditions"
+    secondaryInsight = `${description.charAt(0).toUpperCase() + description.slice(1)}. ${temp}°C, feels like ${feelsLike}°C.`
   }
-  
-  return { mainInsight, secondaryInsight, icon }
+
+  return {
+    mainInsight,
+    secondaryInsight,
+    icon: getWeatherEmoji(weather.main)
+  }
 }
 
 export function FullscreenMapLayout({
@@ -122,6 +145,11 @@ export function FullscreenMapLayout({
 }: FullscreenMapLayoutProps) {
   const [aiInsight, setAIInsight] = useState(generateAIInsight(weatherData))
   const [isLoading, setIsLoading] = useState(false)
+  const weatherCondition = weatherData?.weather?.[0]?.main
+  const weatherEmoji = weatherCondition
+    ? getWeatherEmoji(weatherCondition)
+    : "❓"
+  const hasAccidentZones = totalDangerZones > 0
 
   useEffect(() => {
     setIsLoading(true)
@@ -149,13 +177,14 @@ export function FullscreenMapLayout({
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -30 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="absolute left-5 top-5 bottom-5 z-10 w-60 flex flex-col gap-3"
+        className="absolute left-5 top-5 bottom-5 z-10 w-60 flex flex-col gap-4"
       >
         {/* Route Stats */}
-        <div className="bg-black/60 backdrop-blur-xl rounded-xl p-4 border border-white/14 shadow-xl">
-          <div className="text-[10px] text-white/25 font-bold tracking-[0.2em] uppercase mb-3">
-            Route
-          </div>
+        <div
+          className="relative overflow-hidden rounded-xl p-[22px]"
+          style={railCardSurface}
+        >
+          <div className={sectionLabelClass}>Route</div>
           
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
@@ -188,60 +217,64 @@ export function FullscreenMapLayout({
         </div>
 
         {/* AI Insights */}
-        <div className="bg-black/60 backdrop-blur-xl rounded-xl p-3 border border-white/14 shadow-xl">
-          <div className="text-[10px] text-white/38 font-bold tracking-[0.18em] uppercase mb-2">
-            AI Insights
-          </div>
-          
+        <div
+          className="relative overflow-hidden rounded-xl p-[22px]"
+          style={railCardSurface}
+        >
+          <div className={sectionLabelClass}>AI Insights</div>
+
           {isLoading ? (
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-white/10 animate-pulse" />
-              <div className="flex-1 space-y-1">
-                <div className="h-3 bg-white/10 rounded w-3/4 animate-pulse" />
-                <div className="h-2 bg-white/10 rounded w-1/2 animate-pulse" />
-              </div>
+            <div className="grid grid-cols-[18px_1fr] gap-x-2 gap-y-1.5 text-left">
+              <span className="h-[18px] w-[18px] rounded bg-white/10 animate-pulse" />
+              <span className="h-3.5 w-32 rounded bg-white/10 animate-pulse" />
+              <span className="col-start-2 block h-3 w-full rounded bg-white/10 animate-pulse" />
             </div>
           ) : (
-            <div className="flex items-start gap-2">
-              <span 
-                className="text-lg relative z-10"
-                style={{ 
-                  color: 'rgb(255,210,80)',
-                  filter: 'drop-shadow(0 0 12px rgba(255,210,80,0.18))'
-                }}
+            <div className="grid grid-cols-[18px_1fr] gap-x-2 gap-y-1.5 text-left">
+              <span
+                className="self-center text-[18px] leading-none"
+                aria-hidden
               >
-                {aiInsight.icon}
+                {weatherEmoji}
               </span>
-              <div className="flex-1">
-                <div 
-                  className="text-sm font-medium leading-tight"
-                  style={{ 
-                    color: 'rgb(0,255,190)',
-                    textShadow: '0 0 10px rgba(0,255,180,0.12)'
-                  }}
-                >
-                  {aiInsight.mainInsight.replace('detected.', '')}
-                </div>
-                <div 
-                  className="text-[11px] leading-relaxed mt-1"
-                  style={{ color: 'rgba(255,255,255,0.58)' }}
-                >
-                  {aiInsight.secondaryInsight}
-                </div>
-              </div>
+              <span
+                className={`text-xs font-semibold leading-snug ${adviceColor}`}
+              >
+                {travelAdvice || aiInsight.mainInsight}
+              </span>
+              <p className="col-start-2 text-[11px] font-normal leading-relaxed text-white/35">
+                {aiInsight.secondaryInsight}
+              </p>
             </div>
           )}
         </div>
 
-        {/* Danger Warning */}
-        {totalDangerZones > 0 && (
-          <div className="bg-red-500/12 backdrop-blur-xl rounded-xl p-4 border border-red-500/30 shadow-xl">
-            <div className="flex items-center gap-2.5">
-              <span className="text-lg">⚠️</span>
-              <div className="text-xs text-red-300 font-bold">
-                {totalDangerZones} danger zone{totalDangerZones > 1 ? "s" : ""} detected
-              </div>
+        {/* Accident Warning — only when zones detected */}
+        {hasAccidentZones && (
+          <div
+            className="relative overflow-hidden rounded-xl p-[22px] text-left"
+            style={accidentDangerSurface}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span
+                className="text-base font-bold leading-none text-red-400"
+                aria-hidden
+              >
+                ⚠️
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-400">
+                Accident Warning
+              </span>
             </div>
+
+            <p className="text-xs font-bold leading-snug text-red-400">
+              {totalDangerZones} accident-prone zone
+              {totalDangerZones > 1 ? "s" : ""} detected along your route.
+            </p>
+
+            <p className="mt-2.5 text-[11px] font-normal leading-relaxed text-white/35">
+              Exercise caution and drive safe.
+            </p>
           </div>
         )}
       </motion.div>

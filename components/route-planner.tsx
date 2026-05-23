@@ -20,6 +20,10 @@ interface RoutePlannerProps {
   setStartPlace: (value: string) => void;
   setEndPlace: (value: string) => void;
   onGenerateRoute: () => void;
+  distance?: string;
+  duration?: string;
+  condition?: string;
+  conditionColor?: string;
 }
 
 export function RoutePlanner({
@@ -28,6 +32,10 @@ export function RoutePlanner({
   setStartPlace,
   setEndPlace,
   onGenerateRoute,
+  distance,
+  duration,
+  condition,
+  conditionColor,
 }: RoutePlannerProps) {
   return (
     <motion.div
@@ -189,22 +197,22 @@ export function RoutePlanner({
           <div className="grid grid-cols-3 gap-3 text-center">
 
             <div>
-              <div className="text-xl font-bold text-foreground">
-                247 mi
+              <div className="text-base font-bold text-foreground truncate">
+                {distance || "--"}
               </div>
 
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
+              <div className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium">
                 Distance
               </div>
             </div>
 
             <div className="border-x border-slate-200">
 
-              <div className="text-xl font-bold text-foreground">
-                3h 45m
+              <div className="text-base font-bold text-foreground truncate">
+                {duration || "--"}
               </div>
 
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
+              <div className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium">
                 Duration
               </div>
 
@@ -212,11 +220,11 @@ export function RoutePlanner({
 
             <div>
 
-              <div className="text-xl font-bold text-primary">
-                Good
+              <div className={`text-base font-bold truncate ${conditionColor || "text-primary"}`}>
+                {condition || "--"}
               </div>
 
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
+              <div className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium">
                 Conditions
               </div>
 
