@@ -1,14 +1,17 @@
 import { create } from "zustand"
+import { TrafficIncident } from "@/lib/tomtomTraffic"
 
 interface RouteStore {
 
   routeGeoJSON: any
   weatherPoints: any[]
+  trafficIncidents: TrafficIncident[]
 
   distance: number
   duration: number
 
   travelAdvice: string
+  routeSafetyScore: number
 
   setRouteGeoJSON: (
     data: any
@@ -16,6 +19,10 @@ interface RouteStore {
 
   setWeatherPoints: (
     points: any[]
+  ) => void
+
+  setTrafficIncidents: (
+    incidents: TrafficIncident[]
   ) => void
 
   setDistance: (
@@ -29,6 +36,10 @@ interface RouteStore {
   setTravelAdvice: (
     advice: string
   ) => void
+
+  setRouteSafetyScore: (
+    score: number
+  ) => void
 }
 
 export const useRouteStore =
@@ -37,12 +48,14 @@ export const useRouteStore =
     routeGeoJSON: null,
 
     weatherPoints: [],
+    trafficIncidents: [],
 
     distance: 0,
 
     duration: 0,
 
     travelAdvice: "",
+    routeSafetyScore: 85,
 
     setRouteGeoJSON: (data) =>
       set({
@@ -52,6 +65,11 @@ export const useRouteStore =
     setWeatherPoints: (points) =>
       set({
         weatherPoints: points
+      }),
+
+    setTrafficIncidents: (incidents) =>
+      set({
+        trafficIncidents: incidents
       }),
 
     setDistance: (distance) =>
@@ -67,6 +85,11 @@ export const useRouteStore =
     setTravelAdvice: (advice) =>
       set({
         travelAdvice: advice
+      }),
+
+    setRouteSafetyScore: (score) =>
+      set({
+        routeSafetyScore: score
       })
 
   }))

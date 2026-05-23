@@ -28,6 +28,8 @@ import { AnalyticsOverlay } from "./analytics-overlay"
 
 import { getCoordinates, getRoute } from "@/lib/routing"
 import { getWeather } from "@/lib/weather"
+import { getTrafficIncidents } from "@/lib/tomtomTraffic"
+import { calculateRouteRiskScore, getRiskLevel, getRiskColor } from "@/lib/route-risk-calculation"
 
 import {
   useRouteStore
@@ -77,13 +79,17 @@ export function InteractiveMap({
   const {
     routeGeoJSON,
     weatherPoints,
+    trafficIncidents,
     distance,
     duration,
+    routeSafetyScore,
 
     setRouteGeoJSON,
     setWeatherPoints,
+    setTrafficIncidents,
     setDistance,
-    setDuration
+    setDuration,
+    setRouteSafetyScore
 
   } = useRouteStore()
 
@@ -228,18 +234,44 @@ export function InteractiveMap({
 
       setWeatherPoints(dedupedWeatherData)
 
+      // Fetch traffic incidents for the route area
+      try {
+        const routeCenter = coordinates[Math.floor(coordinates.length / 2)]
+        console.log('Fetching traffic incidents for route center:', routeCenter)
+        console.log('Passing route coordinates for matching:', coordinates.length)
+        const incidents = await getTrafficIncidents(routeCenter[1], routeCenter[0], coordinates)
+        console.log('Setting traffic incidents in store:', incidents.length)
+        setTrafficIncidents(incidents)
+      } catch (error) {
+        console.error("Failed to fetch traffic incidents:", error)
+        setTrafficIncidents([])
+      }
+
+      // Calculate dynamic route safety score based on incidents, weather, and time of day
+      const hour = new Date().getHours()
+      const isNight = hour >= 19 || hour <= 6
+      
+      const firstWeatherPoint = weatherData[0]?.weather
+      const visibility = firstWeatherPoint?.visibility
+      const hasRain = weatherData.some(point => point.weather.weather[0].main === 'Rain')
+      const windSpeed = firstWeatherPoint?.wind?.speed
+
+      const riskScore = calculateRouteRiskScore({
+        incidents: trafficIncidents,
+        visibility,
+        rain: hasRain,
+        windSpeed,
+        isNight
+      })
+
+      setRouteSafetyScore(riskScore)
+
       let dynamicRouteColor = "#34d399"
 
       const hasStorm = weatherData.some(
         point =>
           point.weather.weather[0].main ===
           "Thunderstorm"
-      )
-
-      const hasRain = weatherData.some(
-        point =>
-          point.weather.weather[0].main ===
-          "Rain"
       )
 
       if (hasStorm) {
@@ -335,37 +367,34 @@ export function InteractiveMap({
   const hasSnow =
     weatherConditions.includes("Snow")
 
+  // Update travel advice based on incidents and weather
   let travelAdvice =
     "Excellent travel conditions"
 
   let adviceColor =
     "text-emerald-400"
 
-  if (hasStorm) {
+  const riskLevel = getRiskLevel(routeSafetyScore)
 
-    travelAdvice =
-      "Storm activity detected"
-
+  if (riskLevel === 'HIGH') {
+    travelAdvice = trafficIncidents.length > 0 
+      ? `${trafficIncidents.length} traffic incident${trafficIncidents.length > 1 ? 's' : ''} detected`
+      : "High risk conditions"
     adviceColor = "text-red-500"
-
-  }
-
-  else if (hasRain) {
-
-    travelAdvice =
-      "Moderate rainfall expected"
-
+  } else if (riskLevel === 'MEDIUM') {
+    travelAdvice = trafficIncidents.length > 0
+      ? `${trafficIncidents.length} traffic incident${trafficIncidents.length > 1 ? 's' : ''} on route`
+      : "Moderate conditions"
     adviceColor = "text-amber-400"
-
-  }
-
-  else if (hasSnow) {
-
-    travelAdvice =
-      "Snow conditions detected"
-
+  } else if (hasStorm) {
+    travelAdvice = "Storm activity detected"
+    adviceColor = "text-red-500"
+  } else if (hasRain) {
+    travelAdvice = "Moderate rainfall expected"
+    adviceColor = "text-amber-400"
+  } else if (hasSnow) {
+    travelAdvice = "Snow conditions detected"
     adviceColor = "text-blue-400"
-
   }
 
   return (
@@ -374,7 +403,7 @@ export function InteractiveMap({
       onExitFullscreen={onToggleFullscreen || (() => {})}
       distance={distance}
       duration={duration}
-      routeSafetyScore={dangerAnalysis.routeSafetyScore}
+      routeSafetyScore={routeSafetyScore.toString()}
       travelAdvice={travelAdvice}
       totalDangerZones={dangerAnalysis.totalDangerZones}
       adviceColor={adviceColor}
@@ -592,6 +621,7 @@ export function InteractiveMap({
             setMinimizedAnalytics={setMinimizedAnalytics}
             routeGeoJSON={routeGeoJSON}
             visibleWeatherPoints={visibleWeatherPoints}
+            trafficIncidents={trafficIncidents}
             travelAdvice={travelAdvice}
             adviceColor={adviceColor}
             onRelocateRoute={() => {
@@ -710,6 +740,39 @@ export function InteractiveMap({
           <VehicleLayer
             vehiclePosition={vehiclePosition}
           />
+
+          {/* Traffic Incident Markers */}
+          {trafficIncidents.map((incident) => {
+            const coordinates = incident.geometry.coordinates[0]
+            return (
+              <Marker
+                key={incident.id}
+                longitude={coordinates[0]}
+                latitude={coordinates[1]}
+              >
+                <div className="relative flex items-center justify-center">
+                  {/* Glowing pulse animation */}
+                  <div 
+                    className="absolute w-8 h-8 rounded-full animate-ping"
+                    style={{ backgroundColor: `${incident.color}40` }}
+                  />
+                  {/* Outer glow */}
+                  <div 
+                    className="absolute w-6 h-6 rounded-full"
+                    style={{ 
+                      backgroundColor: `${incident.color}30`,
+                      boxShadow: `0 0 20px ${incident.color}, 0 0 40px ${incident.color}80`
+                    }}
+                  />
+                  {/* Inner marker */}
+                  <div 
+                    className="w-3 h-3 rounded-full border-2 border-white"
+                    style={{ backgroundColor: incident.color }}
+                  />
+                </div>
+              </Marker>
+            )
+          })}
 
           {mapMode === "heatmap" && (
 

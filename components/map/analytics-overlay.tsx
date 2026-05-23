@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { Crosshair, Maximize2 } from "lucide-react"
+import { Crosshair, Maximize2, AlertTriangle } from "lucide-react"
 import { getWeatherEmoji } from "@/lib/weather-panel-utils"
+import { TrafficIncident } from "@/lib/tomtomTraffic"
 
 interface AnalyticsOverlayProps {
   distance: number
@@ -14,6 +15,7 @@ interface AnalyticsOverlayProps {
   adviceColor: string
   routeGeoJSON: any
   visibleWeatherPoints: any[]
+  trafficIncidents?: TrafficIncident[]
   onRelocateRoute: () => void
   onToggleFullscreen?: () => void
   isFullscreen?: boolean
@@ -54,6 +56,7 @@ export function AnalyticsOverlay({
   adviceColor,
   routeGeoJSON,
   visibleWeatherPoints,
+  trafficIncidents = [],
   onRelocateRoute,
   onToggleFullscreen,
   isFullscreen = false
@@ -202,6 +205,44 @@ export function AnalyticsOverlay({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Traffic Incidents */}
+        {trafficIncidents.length > 0 ? (
+          <div>
+            <div className={`${sectionLabel} mb-3`}>Traffic Alerts</div>
+            <div className="space-y-2">
+              {trafficIncidents.slice(0, 3).map((incident, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 rounded-xl bg-white/[0.03] p-2"
+                >
+                  <div 
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: incident.color }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-semibold text-white">
+                      {incident.severity}
+                    </div>
+                    <div className="mt-0.5 text-[10px] text-white/40 truncate">
+                      {incident.properties.events[0]?.description || 'Traffic incident'}
+                    </div>
+                  </div>
+                  <AlertTriangle className="h-3 w-3 shrink-0" style={{ color: incident.color }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className={`${sectionLabel} mb-3`}>Traffic Alerts</div>
+            <div className="rounded-xl bg-white/[0.03] p-3 text-center">
+              <div className="text-xs text-white/40">
+                No traffic incidents detected on route
+              </div>
             </div>
           </div>
         )}

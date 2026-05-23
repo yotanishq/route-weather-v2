@@ -1,11 +1,12 @@
 "use client"
 
 import { Marker } from "react-map-gl/maplibre"
-import { accidentZones, getSeverityColor, AccidentZone } from "@/lib/accident-zones"
+import { TrafficIncident } from "@/lib/tomtomTraffic"
+import { useRouteStore } from "@/store/route-store"
 
 interface AccidentLayerProps {
-  selectedAccidentZone: AccidentZone | null
-  setSelectedAccidentZone: (zone: AccidentZone | null) => void
+  selectedAccidentZone: any
+  setSelectedAccidentZone: (zone: any) => void
   mapRef: any
   visible?: boolean
 }
@@ -17,37 +18,41 @@ export function AccidentLayer({
   visible = true
 }: AccidentLayerProps) {
 
+  const { trafficIncidents } = useRouteStore()
+
   if (!visible) return null
+
+  console.log('Rendering traffic incident markers:', trafficIncidents.length)
 
   return (
 
     <>
 
-      {accidentZones.map((zone) => {
+      {trafficIncidents.map((incident) => {
 
         const isSelected =
           selectedAccidentZone &&
-          selectedAccidentZone.id === zone.id
+          selectedAccidentZone.id === incident.id
 
-        const severityColor = getSeverityColor(zone.severity)
-        const isHighRisk = zone.severity === "high"
+        const severityColor = incident.color
+        const isHighRisk = incident.severity === "HIGH"
 
         return (
 
           <Marker
-            key={zone.id}
-            longitude={zone.coordinates[0]}
-            latitude={zone.coordinates[1]}
+            key={incident.id}
+            longitude={incident.geometry.coordinates[0][0]}
+            latitude={incident.geometry.coordinates[0][1]}
             onClick={(e) => {
               e.originalEvent.stopPropagation()
-              setSelectedAccidentZone(zone)
+              setSelectedAccidentZone(incident)
               
               if (mapRef.current) {
                 const currentZoom = mapRef.current.getZoom()
                 const targetZoom = Math.min(currentZoom + 1.5, 10)
                 
                 mapRef.current.flyTo({
-                  center: [zone.coordinates[0], zone.coordinates[1]],
+                  center: [incident.geometry.coordinates[0][0], incident.geometry.coordinates[0][1]],
                   zoom: targetZoom,
                   duration: 1200,
                   essential: true
