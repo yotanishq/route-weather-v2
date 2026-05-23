@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { Maximize2 } from "lucide-react"
 
 interface AnalyticsOverlayProps {
   distance: number
@@ -13,6 +14,8 @@ interface AnalyticsOverlayProps {
   routeGeoJSON: any
   visibleWeatherPoints: any[]
   onRelocateRoute: () => void
+  onToggleFullscreen?: () => void
+  isFullscreen?: boolean
 }
 
 export function AnalyticsOverlay({
@@ -25,7 +28,9 @@ export function AnalyticsOverlay({
   adviceColor,
   routeGeoJSON,
   visibleWeatherPoints,
-  onRelocateRoute
+  onRelocateRoute,
+  onToggleFullscreen,
+  isFullscreen = false
 }: AnalyticsOverlayProps) {
 
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -66,12 +71,11 @@ export function AnalyticsOverlay({
     return (
 
       <div
-        className="
+        className={`
           absolute
-          top-4
-          left-4
+          ${isFullscreen ? 'top-6 left-6' : 'top-4 left-4'}
           z-40
-        "
+        `}
       >
 
         <div
@@ -233,10 +237,9 @@ export function AnalyticsOverlay({
 
     <div
       ref={overlayRef}
-      className="
+      className={`
         absolute
-        top-4
-        left-4
+        ${isFullscreen ? 'top-6 left-6' : 'top-4 left-4'}
         z-40
 
         w-[200px]
@@ -261,7 +264,7 @@ export function AnalyticsOverlay({
         before:bg-white/[0.02]
         before:pointer-events-none
         before:rounded-[24px]
-      "
+      `}
     >
 
       <div
@@ -366,13 +369,14 @@ export function AnalyticsOverlay({
 
           </div>
 
-          {/* RELOCATE */}
+          {/* RELOCATE & FULLSCREEN */}
 
           <div className="
             mt-2
             flex
             items-center
             justify-center
+            gap-2
           ">
 
             <button
@@ -399,9 +403,41 @@ export function AnalyticsOverlay({
 
                 transition-all
               "
+              title="Relocate to Route"
             >
               ⌖
             </button>
+
+            {onToggleFullscreen && (
+              <button
+                onClick={onToggleFullscreen}
+                className="
+                  flex
+                  items-center
+                  justify-center
+
+                  w-8
+                  h-8
+
+                  rounded-full
+
+                  border
+                  border-emerald-500/30
+
+                  bg-emerald-500/10
+
+                  text-emerald-400
+
+                  hover:bg-emerald-500/20
+                  hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]
+
+                  transition-all
+                "
+                title="Enter Intelligence Mode"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+            )}
 
           </div>
 

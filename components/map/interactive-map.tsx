@@ -8,6 +8,11 @@ import { WeatherLayer } from "./weather-layer"
 import maplibregl from "maplibre-gl"
 import { VehicleLayer } from "./vehicle-layer"
 import WeatherDetailPanel from "./weather-detail-panel"
+import { AccidentLayer } from "./accident-layer"
+import AccidentDetailPanel from "./accident-detail-panel"
+import { FullscreenMapLayout } from "./fullscreen-map-layout"
+import { AccidentZone, accidentZones } from "@/lib/accident-zones"
+import { analyzeRouteDanger } from "@/lib/route-danger-detection"
 
 import Map, {
   Marker,
@@ -32,12 +37,16 @@ interface InteractiveMapProps {
   startPlace: string
   endPlace: string
   triggerRoute: number
+  isFullscreen?: boolean
+  onToggleFullscreen?: () => void
 }
 
 export function InteractiveMap({
   startPlace,
   endPlace,
-  triggerRoute
+  triggerRoute,
+  isFullscreen = false,
+  onToggleFullscreen
 }: InteractiveMapProps) {
 
   const mapRef = useRef<any>(null)
@@ -59,6 +68,11 @@ export function InteractiveMap({
 
   const [selectedWeatherPoint, setSelectedWeatherPoint] =
     useState<any | null>(null)
+
+  const [selectedAccidentZone, setSelectedAccidentZone] =
+    useState<AccidentZone | null>(null)
+
+  const [showAccidentLayer, setShowAccidentLayer] = useState(false)
 
   const {
     routeGeoJSON,
@@ -294,6 +308,16 @@ export function InteractiveMap({
         point.weather.weather[0].main
     )
 
+  // Route danger analysis
+  const routeCoordinates = routeGeoJSON
+    ? routeGeoJSON.features[0].geometry.coordinates
+    : []
+
+  const dangerAnalysis = analyzeRouteDanger(
+    routeCoordinates as [number, number][],
+    showAccidentLayer ? accidentZones : []
+  )
+
   const hasStorm =
     weatherConditions.includes("Thunderstorm")
 
@@ -337,260 +361,396 @@ export function InteractiveMap({
   }
 
   return (
+    <FullscreenMapLayout
+      isFullscreen={isFullscreen}
+      onExitFullscreen={onToggleFullscreen || (() => {})}
+      distance={distance}
+      duration={duration}
+      routeSafetyScore={dangerAnalysis.routeSafetyScore}
+      travelAdvice={travelAdvice}
+      totalDangerZones={dangerAnalysis.totalDangerZones}
+      adviceColor={adviceColor}
+      mapMode={mapMode}
+      setMapMode={setMapMode}
+      showAccidentLayer={showAccidentLayer}
+      setShowAccidentLayer={setShowAccidentLayer}
+      selectedAccidentZone={selectedAccidentZone}
+      setSelectedAccidentZone={setSelectedAccidentZone}
+      weatherData={weatherPoints.length > 0 ? weatherPoints[0].weather : undefined}
+    >
+      <div className={`
+        relative
+        ${isFullscreen ? 'w-full h-screen rounded-none border-0' : 'w-full h-[75vh] rounded-3xl border border-slate-200'}
+        overflow-hidden
+        shadow-2xl
+      `}>
 
-    <div className="
-      relative
-      w-full
-      h-[75vh]
-      rounded-3xl
-      overflow-hidden
-      border border-slate-200
-      shadow-2xl
-    ">
-
-      {loading && (
-
-        <div className="
-          absolute
-          inset-0
-          z-50
-          bg-black/20
-          backdrop-blur-sm
-          flex
-          items-center
-          justify-center
-        ">
+        {loading && (
 
           <div className="
-            px-5
-            py-3
-            rounded-2xl
-            bg-white
-            shadow-2xl
-            border border-slate-200
-            text-sm
-            font-medium
-            text-slate-700
+            absolute
+            inset-0
+            z-[60]
+            bg-black/20
+            backdrop-blur-sm
+            flex
+            items-center
+            justify-center
           ">
-            Generating intelligent route...
+
+            <div className="
+              px-5
+              py-3
+              rounded-2xl
+              bg-white
+              shadow-2xl
+              border border-slate-200
+              text-sm
+              font-medium
+              text-slate-700
+            ">
+              Generating intelligent route...
+            </div>
+
           </div>
 
-        </div>
+        )}
 
-      )}
-
-      <Map
-        terrain={
-          mapMode === "terrain"
-            ? { source: "terrain" }
-            : undefined
-        }
-
-        maxPitch={85}
-
-        ref={mapRef}
-
-        initialViewState={{
-          longitude: 78.9629,
-          latitude: 20.5937,
-          zoom: 4.5,
-          pitch: 60,
-          bearing: -10
-        }}
-
-        onMove={(e) => {
-
-          setZoom(e.viewState.zoom)
-
-          setViewState({
-            longitude: e.viewState.longitude,
-            latitude: e.viewState.latitude,
-            zoom: e.viewState.zoom
-          })
-
-        }}
-
-        onClick={() => {
-          setSelectedWeatherPoint(null)
-        }}
-
-        mapStyle={mapStyles[mapMode]}
-      >
-
-        <NavigationControl position="top-right" />
-
-        <MapControls
-          mapMode={mapMode}
-          setMapMode={setMapMode}
-        />
-
-        <Source
-          id="terrain"
-          type="raster-dem"
-          url={`https://api.maptiler.com/tiles/terrain-rgb/tiles.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`}
-          tileSize={256}
-        />
-
-        <AnalyticsOverlay
-          distance={parseFloat(distance.toFixed(1))}
-          formattedDuration={`${Math.floor(duration / 3600)}h ${Math.floor((duration % 3600) / 60)}m`}
-          bestMode={
-            hasStorm
-              ? "Car"
-              : hasRain
-              ? "4-Wheeler"
-              : "Bike"
+        <Map
+          terrain={
+            mapMode === "terrain"
+              ? { source: "terrain" }
+              : undefined
           }
-          minimizedAnalytics={minimizedAnalytics}
-          setMinimizedAnalytics={setMinimizedAnalytics}
-          routeGeoJSON={routeGeoJSON}
-          visibleWeatherPoints={visibleWeatherPoints}
-          travelAdvice={travelAdvice}
-          adviceColor={adviceColor}
-          onRelocateRoute={() => {
 
-            if (!mapRef.current || !routeGeoJSON) {
-              return
-            }
+          maxPitch={85}
 
-            const coordinates =
-              routeGeoJSON.features[0]
-                .geometry.coordinates
+          ref={mapRef}
 
-            const bounds =
-              new maplibregl.LngLatBounds(
-                coordinates[0],
-                coordinates[0]
-              )
+          initialViewState={{
+            longitude: 78.9629,
+            latitude: 20.5937,
+            zoom: 4.5,
+            pitch: 60,
+            bearing: -10
+          }}
 
-            coordinates.forEach(
-              (coord: [number, number]) => {
-                bounds.extend(coord)
-              }
-            )
+          onMove={(e) => {
 
-            mapRef.current.fitBounds(bounds, {
-              padding: 80,
-              duration: 1400
+            setZoom(e.viewState.zoom)
+
+            setViewState({
+              longitude: e.viewState.longitude,
+              latitude: e.viewState.latitude,
+              zoom: e.viewState.zoom
             })
 
           }}
-        />
 
-        <RouteLayer
-          routeGeoJSON={routeGeoJSON}
-          routeColor={routeColor}
-        />
+          onClick={() => {
+            setSelectedWeatherPoint(null)
+            setSelectedAccidentZone(null)
+          }}
 
-        {startCoords && (
+          mapStyle={mapStyles[mapMode]}
+        >
 
-          <Marker
-            longitude={startCoords[0]}
-            latitude={startCoords[1]}
-          >
+          {!isFullscreen && (
+            <NavigationControl
+              position="top-right"
+              style={{
+                zIndex: 20
+              }}
+            />
+          )}
 
-            <div className="
-              relative
-              flex
-              items-center
-              justify-center
-            ">
+          {isFullscreen && (
+            <div className="absolute top-5 right-4 z-[25] flex flex-col gap-1.5">
+              <button
+                onClick={() => {
+                  if (mapRef.current) {
+                    mapRef.current.zoomIn()
+                  }
+                }}
+                className="w-7 h-7 rounded-lg bg-black/60 backdrop-blur-xl border border-white/14 text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200 flex items-center justify-center"
+                title="Zoom In"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+              <button
+                onClick={() => {
+                  if (mapRef.current) {
+                    mapRef.current.zoomOut()
+                  }
+                }}
+                className="w-7 h-7 rounded-lg bg-black/60 backdrop-blur-xl border border-white/14 text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200 flex items-center justify-center"
+                title="Zoom Out"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                </svg>
+              </button>
+              <button
+                onClick={() => {
+                  if (mapRef.current) {
+                    mapRef.current.resetNorth()
+                  }
+                }}
+                className="w-7 h-7 rounded-lg bg-black/60 backdrop-blur-xl border border-white/14 text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200 flex items-center justify-center"
+                title="Reset Rotation"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button
+                onClick={onToggleFullscreen || (() => {})}
+                className="w-7 h-7 rounded-lg bg-black/60 backdrop-blur-xl border border-white/14 text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200 flex items-center justify-center"
+                title="Exit Fullscreen"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
 
-              <div className="
+          {onToggleFullscreen && !isFullscreen && (
+            <button
+              onClick={onToggleFullscreen}
+              className="
                 absolute
+                top-4
+                right-16
+                z-[25]
+
                 w-10
                 h-10
-                rounded-full
-                bg-emerald-400/20
-                animate-ping
-              " />
 
-              <div className="
-                w-4
-                h-4
-                rounded-full
-                bg-emerald-400
-                border-2
-                border-white
-              " />
+                rounded-xl
 
-            </div>
+                bg-black/60
+                backdrop-blur-xl
+                border
+                border-white/10
 
-          </Marker>
+                text-white/70
 
-        )}
+                hover:bg-white/10
+                hover:text-white
 
-        {endCoords && (
+                transition-all
+                duration-200
 
-          <Marker
-            longitude={endCoords[0]}
-            latitude={endCoords[1]}
-          >
+                flex
+                items-center
+                justify-center
+              "
+              title="Enter Fullscreen"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            </button>
+          )}
 
-            <div className="
-              relative
-              flex
-              items-center
-              justify-center
-            ">
+          {!isFullscreen && (
+            <MapControls
+              mapMode={mapMode}
+              setMapMode={setMapMode}
+            />
+          )}
 
-              <div className="
-                absolute
-                w-10
-                h-10
-                rounded-full
-                bg-red-400/20
-                animate-ping
-              " />
-
-              <div className="
-                w-4
-                h-4
-                rounded-full
-                bg-red-400
-                border-2
-                border-white
-              " />
-
-            </div>
-
-          </Marker>
-
-        )}
-
-        <VehicleLayer
-          vehiclePosition={vehiclePosition}
-        />
-
-        {mapMode === "heatmap" && (
-
-          <HeatmapLayer
-            weatherPoints={weatherPoints}
+          <Source
+            id="terrain"
+            type="raster-dem"
+            url={`https://api.maptiler.com/tiles/terrain-rgb/tiles.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`}
+            tileSize={256}
           />
 
-        )}
-
-        {mapMode !== "heatmap" && (
-
-          <WeatherLayer
+          <AnalyticsOverlay
+            distance={parseFloat(distance.toFixed(1))}
+            formattedDuration={`${Math.floor(duration / 3600)}h ${Math.floor((duration % 3600) / 60)}m`}
+            bestMode={
+              hasStorm
+                ? "Car"
+                : hasRain
+                ? "4-Wheeler"
+                : "Bike"
+            }
+            minimizedAnalytics={minimizedAnalytics}
+            setMinimizedAnalytics={setMinimizedAnalytics}
+            routeGeoJSON={routeGeoJSON}
             visibleWeatherPoints={visibleWeatherPoints}
-            setSelectedWeatherPoint={setSelectedWeatherPoint}
-            selectedWeatherPoint={selectedWeatherPoint}
-            mapRef={mapRef}
+            travelAdvice={travelAdvice}
+            adviceColor={adviceColor}
+            onRelocateRoute={() => {
+
+              if (!mapRef.current || !routeGeoJSON) {
+                return
+              }
+
+              const coordinates =
+                routeGeoJSON.features[0]
+                  .geometry.coordinates
+
+              const bounds =
+                new maplibregl.LngLatBounds(
+                  coordinates[0],
+                  coordinates[0]
+                )
+
+              coordinates.forEach(
+                (coord: [number, number]) => {
+                  bounds.extend(coord)
+                }
+              )
+
+              mapRef.current.fitBounds(bounds, {
+                padding: 80,
+                duration: 1400
+              })
+
+            }}
+            onToggleFullscreen={onToggleFullscreen}
+            isFullscreen={isFullscreen}
           />
 
-        )}
-        
-        {selectedWeatherPoint && (
-          <WeatherDetailPanel
-            point={selectedWeatherPoint}
-            onClose={() => setSelectedWeatherPoint(null)}
+          <RouteLayer
+            routeGeoJSON={routeGeoJSON}
+            routeColor={routeColor}
           />
-        )}
-      </Map>
 
-    </div>
+          {startCoords && (
 
+            <Marker
+              longitude={startCoords[0]}
+              latitude={startCoords[1]}
+            >
+
+              <div className="
+                relative
+                flex
+                items-center
+                justify-center
+              ">
+
+                <div className="
+                  absolute
+                  w-10
+                  h-10
+                  rounded-full
+                  bg-emerald-400/20
+                  animate-ping
+                " />
+
+                <div className="
+                  w-4
+                  h-4
+                  rounded-full
+                  bg-emerald-400
+                  border-2
+                  border-white
+                " />
+
+              </div>
+
+            </Marker>
+
+          )}
+
+          {endCoords && (
+
+            <Marker
+              longitude={endCoords[0]}
+              latitude={endCoords[1]}
+            >
+
+              <div className="
+                relative
+                flex
+                items-center
+                justify-center
+              ">
+
+                <div className="
+                  absolute
+                  w-10
+                  h-10
+                  rounded-full
+                  bg-red-400/20
+                  animate-ping
+                " />
+
+                <div className="
+                  w-4
+                  h-4
+                  rounded-full
+                  bg-red-400
+                  border-2
+                  border-white
+                " />
+
+              </div>
+
+            </Marker>
+
+          )}
+
+          <VehicleLayer
+            vehiclePosition={vehiclePosition}
+          />
+
+          {mapMode === "heatmap" && (
+
+            <HeatmapLayer
+              weatherPoints={weatherPoints}
+            />
+
+          )}
+
+          {mapMode !== "heatmap" && (
+
+            <WeatherLayer
+              visibleWeatherPoints={visibleWeatherPoints}
+              setSelectedWeatherPoint={setSelectedWeatherPoint}
+              selectedWeatherPoint={selectedWeatherPoint}
+              mapRef={mapRef}
+            />
+
+          )}
+          
+          {selectedWeatherPoint && (
+            <WeatherDetailPanel
+              point={selectedWeatherPoint}
+              onClose={() => setSelectedWeatherPoint(null)}
+            />
+          )}
+
+          {/* ACCIDENT LAYER - Only in fullscreen mode */}
+          {isFullscreen && showAccidentLayer && (
+            <AccidentLayer
+              selectedAccidentZone={selectedAccidentZone}
+              setSelectedAccidentZone={setSelectedAccidentZone}
+              mapRef={mapRef}
+              visible={showAccidentLayer}
+            />
+          )}
+
+          {/* ACCIDENT DETAIL PANEL - Only show in non-fullscreen mode */}
+          {selectedAccidentZone && !isFullscreen && (
+            <AccidentDetailPanel
+              zone={selectedAccidentZone}
+              onClose={() => setSelectedAccidentZone(null)}
+            />
+          )}
+
+        </Map>
+
+      </div>
+    </FullscreenMapLayout>
   )
 
 }

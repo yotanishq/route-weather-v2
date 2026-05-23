@@ -123,3 +123,48 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* MapLibre Control Styling */
+.maplibregl-ctrl {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.maplibregl-ctrl-group {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.maplibregl-ctrl-group:not(:empty) {
+  margin: 0 !important;
+}
+
+.maplibregl-ctrl button {
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  transition: all 0.2s ease !important;
+}
+
+.maplibregl-ctrl button:hover {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: rgb(52, 211, 153) !important;
+}
+
+.maplibregl-ctrl button:focus {
+  outline: none !important;
+}
+
+.maplibregl-ctrl-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+.maplibregl-ctrl button:hover .maplibregl-ctrl-icon {
+  filter: brightness(0) invert(1) !important;
+}

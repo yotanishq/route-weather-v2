@@ -5,11 +5,12 @@ interface MapControlsProps {
   setMapMode: (
   mode: "normal" | "terrain" | "heatmap"
 ) => void
+  isFullscreen?: boolean
 }
 
-export function MapControls({ mapMode, setMapMode }: MapControlsProps) {
+export function MapControls({ mapMode, setMapMode, isFullscreen = false }: MapControlsProps) {
   return (
-    <div className="absolute top-5 right-14 z-50 flex items-center gap-2">
+    <div className={`absolute ${isFullscreen ? 'top-6 right-24' : 'top-5 right-14'} z-[30] flex items-center gap-2`}>
       {(["normal", "terrain", "heatmap"] as const).map((mode) => (
         <button
           key={mode}

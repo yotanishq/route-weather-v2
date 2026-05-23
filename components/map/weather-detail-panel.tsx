@@ -17,21 +17,20 @@ export default function WeatherDetailPanel({
     <div
       className="
         absolute
-        bottom-5
-        right-5
+        bottom-6
+        right-6
         z-50
 
-        w-[280px]
+        w-[320px]
 
-        rounded-3xl
-        border border-white/10
+        rounded-2xl
 
-        bg-black/60
+        bg-black/40
         backdrop-blur-2xl
 
         p-5
 
-        shadow-2xl
+        shadow-[0_8px_32px_rgba(0,0,0,0.4)]
       "
     >
 
@@ -76,7 +75,7 @@ export default function WeatherDetailPanel({
       <div className="mt-5 grid grid-cols-2 gap-3">
 
         <div className="rounded-2xl bg-white/[0.03] p-3">
-          <div className="text-xs text-white/40">
+          <div className="text-[10px] text-white/40 font-semibold tracking-widest uppercase">
             Humidity
           </div>
 
@@ -86,7 +85,7 @@ export default function WeatherDetailPanel({
         </div>
 
         <div className="rounded-2xl bg-white/[0.03] p-3">
-          <div className="text-xs text-white/40">
+          <div className="text-[10px] text-white/40 font-semibold tracking-widest uppercase">
             Wind
           </div>
 
