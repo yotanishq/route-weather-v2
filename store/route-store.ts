@@ -1,4 +1,5 @@
 import { create } from "zustand"
+import type { AccidentZone } from "@/lib/accidents"
 
 interface RouteStore {
 
@@ -9,6 +10,10 @@ interface RouteStore {
   duration: number
 
   travelAdvice: string
+
+  accidentZones: AccidentZone[]
+
+  setAccidentZones: (zones: AccidentZone[]) => void
 
   setRouteGeoJSON: (
     data: any
@@ -43,6 +48,13 @@ export const useRouteStore =
     duration: 0,
 
     travelAdvice: "",
+
+    accidentZones: [],
+
+    setAccidentZones: (zones) =>
+      set({
+        accidentZones: zones
+      }),
 
     setRouteGeoJSON: (data) =>
       set({

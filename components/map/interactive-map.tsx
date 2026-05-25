@@ -13,6 +13,7 @@ import AccidentDetailPanel from "./accident-detail-panel"
 import { FullscreenMapLayout } from "./fullscreen-map-layout"
 import { AccidentZone, accidentZones } from "@/lib/accident-zones"
 import { analyzeRouteDanger } from "@/lib/route-danger-detection"
+import { getAccidentsAlongRoute } from "@/lib/accidents"
 
 import Map, {
   Marker,
@@ -227,6 +228,22 @@ export function InteractiveMap({
         })
 
       setWeatherPoints(dedupedWeatherData)
+
+      // Fetch isolated accident data after weather processing completes
+      try {
+        const accidents = await getAccidentsAlongRoute(
+          coordinates,
+          process.env.NEXT_PUBLIC_TOMTOM_API_KEY!
+        )
+
+        useRouteStore.getState().setAccidentZones(accidents)
+
+        console.log("⚠️ Accident zones fetched:", accidents.length)
+      } catch (error) {
+        console.warn("Accident fetch failed:", error)
+
+        useRouteStore.getState().setAccidentZones([])
+      }
 
       let dynamicRouteColor = "#34d399"
 
