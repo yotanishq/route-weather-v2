@@ -11,7 +11,14 @@ import WeatherDetailPanel from "./weather-detail-panel"
 import { AccidentLayer } from "./accident-layer"
 import AccidentDetailPanel from "./accident-detail-panel"
 import { FullscreenMapLayout } from "./fullscreen-map-layout"
-import { AccidentZone, accidentZones } from "@/lib/accident-zones"
+import {
+  getAccidentsAlongRoute,
+  type AccidentZone as RouteAccidentZone
+} from "@/lib/accidents"
+import {
+  getMarkerPresentation,
+  getRiskScore
+} from "@/lib/accident-incident-copy"
 import { analyzeRouteDanger } from "@/lib/route-danger-detection"
 
 import Map, {
@@ -69,8 +76,8 @@ export function InteractiveMap({
   const [selectedWeatherPoint, setSelectedWeatherPoint] =
     useState<any | null>(null)
 
-  const [selectedAccidentZone, setSelectedAccidentZone] =
-    useState<AccidentZone | null>(null)
+  const [selectedIncident, setSelectedIncident] =
+    useState<RouteAccidentZone | null>(null)
 
   const [showAccidentLayer, setShowAccidentLayer] = useState(false)
 
@@ -83,7 +90,9 @@ export function InteractiveMap({
     setRouteGeoJSON,
     setWeatherPoints,
     setDistance,
-    setDuration
+    setDuration,
+
+    accidentZones
 
   } = useRouteStore()
 
@@ -108,7 +117,7 @@ export function InteractiveMap({
   useEffect(() => {
     if (isFullscreen) {
       setSelectedWeatherPoint(null)
-      setSelectedAccidentZone(null)
+      setSelectedIncident(null)
       setMinimizedAnalytics(true)
     }
   }, [isFullscreen])
@@ -134,6 +143,7 @@ export function InteractiveMap({
     try {
 
       setLoading(true)
+      useRouteStore.getState().setAccidentZones([])
 
       const start =
         await getCoordinates(startPlace)
@@ -228,6 +238,17 @@ export function InteractiveMap({
 
       setWeatherPoints(dedupedWeatherData)
 
+      const tomtomKey =
+        process.env.NEXT_PUBLIC_TOMTOM_API_KEY ||
+        process.env.NEXT_PUBLIC_TOMTOM_KEY ||
+        ""
+
+      const accidents = await getAccidentsAlongRoute(
+        coordinates,
+        tomtomKey
+      )
+      useRouteStore.getState().setAccidentZones(accidents)
+
       let dynamicRouteColor = "#34d399"
 
       const hasStorm = weatherData.some(
@@ -321,9 +342,21 @@ export function InteractiveMap({
     ? routeGeoJSON.features[0].geometry.coordinates
     : []
 
+  const accidentProneZones = accidentZones.filter(
+    (zone) => zone.isAccidentProne
+  )
+  const trafficIncidentCount = accidentZones.length - accidentProneZones.length
+
   const dangerAnalysis = analyzeRouteDanger(
     routeCoordinates as [number, number][],
-    showAccidentLayer ? accidentZones : []
+    accidentProneZones.map((zone, index) => ({
+      id: `tomtom-accident-${index}`,
+      name: zone.roadName,
+      coordinates: [zone.lng, zone.lat],
+      severity: zone.severity,
+      reason: zone.description,
+      riskScore: getRiskScore(zone)
+    }))
   )
 
   const hasStorm =
@@ -382,8 +415,10 @@ export function InteractiveMap({
       setMapMode={setMapMode}
       showAccidentLayer={showAccidentLayer}
       setShowAccidentLayer={setShowAccidentLayer}
-      selectedAccidentZone={selectedAccidentZone}
-      setSelectedAccidentZone={setSelectedAccidentZone}
+      selectedIncident={selectedIncident}
+      setSelectedIncident={setSelectedIncident}
+      accidentProneCount={accidentProneZones.length}
+      trafficIncidentCount={trafficIncidentCount}
       weatherData={weatherPoints.length > 0 ? weatherPoints[0].weather : undefined}
     >
       <div className={`
@@ -457,7 +492,7 @@ export function InteractiveMap({
 
           onClick={() => {
             setSelectedWeatherPoint(null)
-            setSelectedAccidentZone(null)
+            setSelectedIncident(null)
           }}
 
           mapStyle={mapStyles[mapMode]}
@@ -729,6 +764,71 @@ export function InteractiveMap({
             />
 
           )}
+
+          {mapMode !== "heatmap" &&
+            !(isFullscreen && showAccidentLayer) &&
+            accidentZones.map((accident) => {
+              const marker = getMarkerPresentation(accident)
+
+              const isSelected =
+                selectedIncident?.lng === accident.lng &&
+                selectedIncident?.lat === accident.lat
+
+              return (
+                <Marker
+                  key={`route-accident-${accident.lng.toFixed(5)}-${accident.lat.toFixed(5)}`}
+                  longitude={accident.lng}
+                  latitude={accident.lat}
+                  anchor="bottom"
+                >
+                  <div
+                    className="relative flex cursor-pointer items-center justify-center"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedIncident(
+                        isSelected ? null : accident
+                      )
+                    }}
+                  >
+                    {marker.showPing && (
+                      <div
+                        className={`absolute h-10 w-10 rounded-full ${marker.pingClass} animate-ping`}
+                      />
+                    )}
+
+                    <div
+                      className={`relative flex h-7 w-7 items-center justify-center rounded-full border-2 bg-black/70 text-sm backdrop-blur-sm ${marker.borderClass}`}
+                    >
+                      {marker.icon}
+                    </div>
+
+                    {isSelected && (
+                      <div className="absolute left-1/2 top-full z-10 mt-1 w-44 -translate-x-1/2 rounded-lg border border-white/10 bg-black/90 p-2 text-left shadow-lg backdrop-blur-md">
+                        <p className="text-[10px] leading-snug text-white/80">
+                          {accident.description}
+                        </p>
+                        <p className="mt-1 text-[10px] font-medium text-white/60">
+                          {accident.roadName}
+                        </p>
+                        <span
+                          className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase ${
+                            accident.isAccidentProne
+                              ? accident.severity === "high"
+                                ? "bg-red-500/20 text-red-300"
+                                : "bg-orange-500/20 text-orange-300"
+                              : "bg-slate-500/20 text-slate-300"
+                          }`}
+                        >
+                          {accident.isAccidentProne
+                            ? "Accident risk"
+                            : "Traffic alert"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </Marker>
+              )
+            })}
           
           {selectedWeatherPoint && (
             <WeatherDetailPanel
@@ -741,18 +841,19 @@ export function InteractiveMap({
           {/* ACCIDENT LAYER - Only in fullscreen mode */}
           {isFullscreen && showAccidentLayer && (
             <AccidentLayer
-              selectedAccidentZone={selectedAccidentZone}
-              setSelectedAccidentZone={setSelectedAccidentZone}
+              zones={accidentZones}
+              selectedIncident={selectedIncident}
+              setSelectedIncident={setSelectedIncident}
               mapRef={mapRef}
               visible={showAccidentLayer}
             />
           )}
 
           {/* ACCIDENT DETAIL PANEL - Only show in non-fullscreen mode */}
-          {selectedAccidentZone && !isFullscreen && (
+          {selectedIncident && !isFullscreen && (
             <AccidentDetailPanel
-              zone={selectedAccidentZone}
-              onClose={() => setSelectedAccidentZone(null)}
+              zone={selectedIncident}
+              onClose={() => setSelectedIncident(null)}
             />
           )}
 

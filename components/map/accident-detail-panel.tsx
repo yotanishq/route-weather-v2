@@ -1,6 +1,14 @@
 "use client"
 
-import { AccidentZone, getSeverityColor, getSeverityLabel } from "@/lib/accident-zones"
+import type { AccidentZone } from "@/lib/accidents"
+import {
+  getIncidentTypeLabel,
+  getRiskScore,
+  getSafetyWarning,
+  getSeverityColor,
+  getSeverityLabel,
+  getTravelRecommendation
+} from "@/lib/accident-incident-copy"
 
 interface AccidentDetailPanelProps {
   zone: AccidentZone
@@ -11,9 +19,9 @@ export default function AccidentDetailPanel({
   zone,
   onClose
 }: AccidentDetailPanelProps) {
-
-  const severityColor = getSeverityColor(zone.severity)
-  const severityLabel = getSeverityLabel(zone.severity)
+  const severityColor = getSeverityColor(zone)
+  const severityLabel = getSeverityLabel(zone)
+  const incidentLabel = getIncidentTypeLabel(zone.incidentType)
 
   return (
     <div
@@ -40,9 +48,16 @@ export default function AccidentDetailPanel({
 
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-xl">⚠️</span>
-            <div className="text-xl font-semibold text-white">
-              {zone.name}
+            <span className="text-xl">
+              {zone.isAccidentProne ? "⚠️" : "ℹ️"}
+            </span>
+            <div>
+              <div className="text-xl font-semibold text-white">
+                {zone.roadName}
+              </div>
+              <div className="mt-0.5 text-xs text-white/45">
+                {incidentLabel}
+              </div>
             </div>
           </div>
 
@@ -54,7 +69,8 @@ export default function AccidentDetailPanel({
               {severityLabel}
             </div>
             <div className="text-sm text-white/40">
-              Risk Score: {zone.riskScore}/100
+              {zone.isAccidentProne ? "Risk" : "Delay"} score:{" "}
+              {getRiskScore(zone)}/100
             </div>
           </div>
         </div>
@@ -85,36 +101,28 @@ export default function AccidentDetailPanel({
 
         <div className="rounded-2xl bg-white/[0.03] p-4">
           <div className="text-[10px] text-white/40 font-semibold tracking-widest uppercase">
-            Accident Reason
+            {zone.isAccidentProne ? "Accident reason" : "Incident details"}
           </div>
           <div className="mt-2 text-sm text-white font-medium leading-relaxed">
-            {zone.reason}
+            {zone.description}
           </div>
         </div>
 
         <div className="rounded-2xl bg-white/[0.03] p-4">
           <div className="text-[10px] text-white/40 font-semibold tracking-widest uppercase">
-            Travel Recommendation
+            Travel recommendation
           </div>
           <div className="mt-2 text-sm text-white font-medium leading-relaxed">
-            {zone.severity === "high"
-              ? "Consider alternate route. Exercise extreme caution if this route is unavoidable."
-              : zone.severity === "medium"
-              ? "Drive with caution. Maintain safe distance and reduce speed in this area."
-              : "Route is generally safe. Stay alert for changing conditions."}
+            {getTravelRecommendation(zone)}
           </div>
         </div>
 
         <div className="rounded-2xl bg-white/[0.03] p-4">
           <div className="text-[10px] text-white/40 font-semibold tracking-widest uppercase">
-            Safety Warning
+            Safety warning
           </div>
           <div className="mt-2 text-sm text-white font-medium leading-relaxed">
-            {zone.severity === "high"
-              ? "⚠️ High-risk zone. Avoid during adverse weather conditions."
-              : zone.severity === "medium"
-              ? "⚡ Moderate risk. Check local traffic updates before traveling."
-              : "✅ Low risk area. Standard driving precautions apply."}
+            {getSafetyWarning(zone)}
           </div>
         </div>
 

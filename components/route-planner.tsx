@@ -13,6 +13,7 @@ import {
   Sparkles,
   Route,
 } from "lucide-react";
+import { useRouteStore } from "@/store/route-store";
 
 interface RoutePlannerProps {
   startPlace: string;
@@ -37,6 +38,29 @@ export function RoutePlanner({
   condition,
   conditionColor,
 }: RoutePlannerProps) {
+  const storeDistance = useRouteStore((state) => state.distance);
+  const storeDuration = useRouteStore((state) => state.duration);
+  const accidentZones = useRouteStore((state) => state.accidentZones);
+
+  const displayDistance = storeDistance ? `${storeDistance} km` : "--";
+  const displayDuration = storeDuration
+    ? `${Math.floor(storeDuration / 3600)}h ${Math.floor((storeDuration % 3600) / 60)}m`
+    : "--";
+
+  let displayCondition = "Good";
+  let displayConditionColor = "text-green-500";
+
+  if (
+    accidentZones.length > 0 &&
+    accidentZones.some((zone) => zone.severity === "high")
+  ) {
+    displayCondition = "Risky";
+    displayConditionColor = "text-red-500";
+  } else if (accidentZones.length > 0) {
+    displayCondition = "Caution";
+    displayConditionColor = "text-amber-500";
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -198,7 +222,7 @@ export function RoutePlanner({
 
             <div>
               <div className="text-base font-bold text-foreground truncate">
-                {distance || "--"}
+                {displayDistance}
               </div>
 
               <div className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium">
@@ -209,7 +233,7 @@ export function RoutePlanner({
             <div className="border-x border-slate-200">
 
               <div className="text-base font-bold text-foreground truncate">
-                {duration || "--"}
+                {displayDuration}
               </div>
 
               <div className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium">
@@ -220,8 +244,8 @@ export function RoutePlanner({
 
             <div>
 
-              <div className={`text-base font-bold truncate ${conditionColor || "text-primary"}`}>
-                {condition || "--"}
+              <div className={`text-base font-bold truncate ${displayConditionColor}`}>
+                {displayCondition}
               </div>
 
               <div className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium">

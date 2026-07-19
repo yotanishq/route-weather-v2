@@ -1,18 +1,31 @@
 "use client"
 
 import { Marker } from "react-map-gl/maplibre"
-import { accidentZones, getSeverityColor, AccidentZone } from "@/lib/accident-zones"
+import type { AccidentZone } from "@/lib/accidents"
+import {
+  getMarkerPresentation,
+  getSeverityColor
+} from "@/lib/accident-incident-copy"
 
 interface AccidentLayerProps {
-  selectedAccidentZone: AccidentZone | null
-  setSelectedAccidentZone: (zone: AccidentZone | null) => void
+  zones: AccidentZone[]
+  selectedIncident: AccidentZone | null
+  setSelectedIncident: (zone: AccidentZone | null) => void
   mapRef: any
   visible?: boolean
 }
 
+function sameIncident(a: AccidentZone, b: AccidentZone): boolean {
+  return (
+    a.lat.toFixed(5) === b.lat.toFixed(5) &&
+    a.lng.toFixed(5) === b.lng.toFixed(5)
+  )
+}
+
 export function AccidentLayer({
-  selectedAccidentZone,
-  setSelectedAccidentZone,
+  zones,
+  selectedIncident,
+  setSelectedIncident,
   mapRef,
   visible = true
 }: AccidentLayerProps) {
@@ -23,31 +36,31 @@ export function AccidentLayer({
 
     <>
 
-      {accidentZones.map((zone) => {
+      {zones.map((zone, index) => {
+        const zoneId = `tomtom-incident-${index}`
 
         const isSelected =
-          selectedAccidentZone &&
-          selectedAccidentZone.id === zone.id
+          selectedIncident && sameIncident(selectedIncident, zone)
 
-        const severityColor = getSeverityColor(zone.severity)
-        const isHighRisk = zone.severity === "high"
+        const severityColor = getSeverityColor(zone)
+        const marker = getMarkerPresentation(zone)
 
         return (
 
           <Marker
-            key={zone.id}
-            longitude={zone.coordinates[0]}
-            latitude={zone.coordinates[1]}
+            key={zoneId}
+            longitude={zone.lng}
+            latitude={zone.lat}
             onClick={(e) => {
               e.originalEvent.stopPropagation()
-              setSelectedAccidentZone(zone)
+              setSelectedIncident(zone)
               
               if (mapRef.current) {
                 const currentZoom = mapRef.current.getZoom()
                 const targetZoom = Math.min(currentZoom + 1.5, 10)
                 
                 mapRef.current.flyTo({
-                  center: [zone.coordinates[0], zone.coordinates[1]],
+                  center: [zone.lng, zone.lat],
                   zoom: targetZoom,
                   duration: 1200,
                   essential: true
@@ -69,7 +82,6 @@ export function AccidentLayer({
               `}
             >
 
-              {/* Ambient glow - always present but subtle */}
               <div
                 className="
                   absolute
@@ -81,8 +93,7 @@ export function AccidentLayer({
                 style={{ backgroundColor: severityColor }}
               />
 
-              {/* Pulse ring for high-risk zones */}
-              {isHighRisk && (
+              {marker.showPing && (
                 <div
                   className="
                     absolute
@@ -99,7 +110,6 @@ export function AccidentLayer({
                 />
               )}
 
-              {/* Selected state glow */}
               {isSelected && (
                 <div
                   className="
@@ -115,7 +125,6 @@ export function AccidentLayer({
                 />
               )}
 
-              {/* Warning icon container */}
               <div
                 className="
                   relative
@@ -136,12 +145,11 @@ export function AccidentLayer({
               >
 
                 <span className="text-sm opacity-90">
-                  ⚠️
+                  {marker.icon}
                 </span>
 
               </div>
 
-              {/* Risk indicator dot */}
               <div
                 className="
                   absolute

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { Crosshair, Maximize2 } from "lucide-react"
-import { getWeatherEmoji } from "@/lib/weather-panel-utils"
+import { useRouteStore } from "@/store/route-store"
 
 interface AnalyticsOverlayProps {
   distance: number
@@ -29,6 +29,87 @@ const rowLabel = "text-[11px] font-medium text-white/35"
 
 const iconButton =
   "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition-all hover:bg-white/10"
+
+function formatDuration(seconds: number): string {
+  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+}
+
+function getTravelAdvice(
+  accidentZones: { severity: string }[],
+  weatherPoints: { weather: { weather: { main: string }[] } }[]
+): { message: string; icon: string; colorClass: string } {
+  const hasHighSeverity = accidentZones.some(
+    (zone) => zone.severity === "high"
+  )
+  const hasRain = weatherPoints.some(
+    (point) => point.weather.weather[0].main === "Rain"
+  )
+  const hasStorm = weatherPoints.some(
+    (point) => point.weather.weather[0].main === "Thunderstorm"
+  )
+
+  if (hasHighSeverity) {
+    return {
+      message: "🔴 High Risk Route - Major accident zones detected",
+      icon: "🔴",
+      colorClass: "text-red-400"
+    }
+  }
+
+  if (accidentZones.length > 3) {
+    return {
+      message: "🟠 Moderate Risk - Multiple incident zones on route",
+      icon: "🟠",
+      colorClass: "text-amber-400"
+    }
+  }
+
+  if (accidentZones.length > 0) {
+    return {
+      message: "🟡 Low Risk - Minor incidents reported nearby",
+      icon: "🟡",
+      colorClass: "text-yellow-400"
+    }
+  }
+
+  if (hasStorm) {
+    return {
+      message: "⛈ Storm activity - Drive with caution",
+      icon: "⛈",
+      colorClass: "text-red-500"
+    }
+  }
+
+  if (hasRain) {
+    return {
+      message: "🌧 Wet roads expected along route",
+      icon: "🌧",
+      colorClass: "text-amber-400"
+    }
+  }
+
+  return {
+    message: "✅ Route looks clear - Good travel conditions",
+    icon: "✅",
+    colorClass: "text-emerald-400"
+  }
+}
+
+function getRecommendedMode(
+  accidentZones: { severity: string }[],
+  weatherPoints: { weather: { weather: { main: string }[] } }[]
+): string {
+  const hasHighSeverity = accidentZones.some(
+    (zone) => zone.severity === "high"
+  )
+  const hasRain = weatherPoints.some(
+    (point) => point.weather.weather[0].main === "Rain"
+  )
+
+  if (hasHighSeverity) return "Train / Bus"
+  if (accidentZones.length > 3 || hasRain) return "4-Wheeler only"
+  return "Any vehicle"
+}
 
 function RelocateButton({ onClick }: { onClick: () => void }) {
   return (
@@ -60,11 +141,22 @@ export function AnalyticsOverlay({
 }: AnalyticsOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
 
-  const primaryCondition =
-    visibleWeatherPoints[0]?.weather?.weather?.[0]?.main
-  const insightEmoji = primaryCondition
-    ? getWeatherEmoji(primaryCondition)
-    : "🌤️"
+  const accidentZones = useRouteStore((state) => state.accidentZones)
+  const weatherPoints = useRouteStore((state) => state.weatherPoints)
+  const storeDistance = useRouteStore((state) => state.distance)
+  const storeDuration = useRouteStore((state) => state.duration)
+
+  const formattedStoreDuration = formatDuration(storeDuration)
+  const travelInsight = getTravelAdvice(accidentZones, weatherPoints)
+  const recommendedMode = getRecommendedMode(accidentZones, weatherPoints)
+
+  const insightSecondaryText =
+    accidentZones.length > 0
+      ? accidentZones
+          .slice(0, 2)
+          .map((zone) => `${zone.roadName} — ${zone.severity} severity`)
+          .join(" · ")
+      : "AI-powered weather sync for safer travel."
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -96,7 +188,7 @@ export function AnalyticsOverlay({
           <div>
             <div className={rowLabel}>Distance</div>
             <div className="mt-0.5 text-xs font-bold leading-none text-white">
-              {distance} km
+              {storeDistance} km
             </div>
           </div>
 
@@ -105,7 +197,7 @@ export function AnalyticsOverlay({
           <div>
             <div className={rowLabel}>ETA</div>
             <div className="mt-0.5 text-xs font-bold leading-none text-emerald-400">
-              {formattedDuration}
+              {formattedStoreDuration}
             </div>
           </div>
 
@@ -114,7 +206,7 @@ export function AnalyticsOverlay({
           <div>
             <div className={rowLabel}>Best</div>
             <div className="mt-0.5 text-xs font-bold leading-none text-white">
-              {bestMode}
+              {recommendedMode}
             </div>
           </div>
 
@@ -149,17 +241,17 @@ export function AnalyticsOverlay({
           <div className="space-y-2.5 rounded-xl bg-white/[0.03] p-2.5">
             <div className="flex items-center justify-between">
               <span className={rowLabel}>Distance</span>
-              <span className="text-xs font-bold text-white">{distance} km</span>
+              <span className="text-xs font-bold text-white">{storeDistance} km</span>
             </div>
             <div className="flex items-center justify-between">
               <span className={rowLabel}>Duration</span>
               <span className="text-xs font-bold text-emerald-400">
-                {formattedDuration}
+                {formattedStoreDuration}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className={rowLabel}>Best mode</span>
-              <span className="text-xs font-bold text-white">{bestMode}</span>
+              <span className="text-xs font-bold text-white">{recommendedMode}</span>
             </div>
 
             <div className="flex items-center justify-center gap-2 border-t border-white/[0.06] pt-2.5">
@@ -214,15 +306,15 @@ export function AnalyticsOverlay({
               className="self-center text-[18px] leading-none"
               aria-hidden
             >
-              {insightEmoji}
+              {travelInsight.icon}
             </span>
             <span
-              className={`text-xs font-semibold leading-snug ${adviceColor}`}
+              className={`text-xs font-semibold leading-snug ${travelInsight.colorClass}`}
             >
-              {travelAdvice}
+              {travelInsight.message}
             </span>
             <p className="col-start-2 text-[11px] font-normal leading-relaxed text-white/35">
-              AI-powered weather sync for safer travel.
+              {insightSecondaryText}
             </p>
           </div>
         </div>

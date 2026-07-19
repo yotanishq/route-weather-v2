@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion"
 import { FullscreenCinematicAccidentPanel } from "./fullscreen-cinematic-accident-panel"
+import { buildCinematicPanelData } from "@/lib/accident-incident-copy"
 import { getWeatherEmoji } from "@/lib/weather-panel-utils"
+import type { AccidentZone } from "@/lib/accidents"
 import { useState, useEffect, type CSSProperties } from "react"
 
 const railCardSurface: CSSProperties = {
@@ -38,8 +40,10 @@ interface FullscreenMapLayoutProps {
   setMapMode: (mode: "normal" | "terrain" | "heatmap") => void
   showAccidentLayer: boolean
   setShowAccidentLayer: (show: boolean) => void
-  selectedAccidentZone: any
-  setSelectedAccidentZone: (zone: any) => void
+  selectedIncident: AccidentZone | null
+  setSelectedIncident: (zone: AccidentZone | null) => void
+  accidentProneCount: number
+  trafficIncidentCount: number
   weatherData?: any
 }
 
@@ -139,8 +143,10 @@ export function FullscreenMapLayout({
   setMapMode,
   showAccidentLayer,
   setShowAccidentLayer,
-  selectedAccidentZone,
-  setSelectedAccidentZone,
+  selectedIncident,
+  setSelectedIncident,
+  accidentProneCount,
+  trafficIncidentCount,
   weatherData
 }: FullscreenMapLayoutProps) {
   const [aiInsight, setAIInsight] = useState(generateAIInsight(weatherData))
@@ -149,7 +155,8 @@ export function FullscreenMapLayout({
   const weatherEmoji = weatherCondition
     ? getWeatherEmoji(weatherCondition)
     : "❓"
-  const hasAccidentZones = totalDangerZones > 0
+  const hasAccidentZones = accidentProneCount > 0
+  const hasTrafficAlerts = trafficIncidentCount > 0
 
   useEffect(() => {
     setIsLoading(true)
@@ -268,12 +275,37 @@ export function FullscreenMapLayout({
             </div>
 
             <p className="text-xs font-bold leading-snug text-red-400">
-              {totalDangerZones} accident-prone zone
-              {totalDangerZones > 1 ? "s" : ""} detected along your route.
+              {accidentProneCount} accident-prone zone
+              {accidentProneCount > 1 ? "s" : ""} detected along your route.
             </p>
 
             <p className="mt-2.5 text-[11px] font-normal leading-relaxed text-white/35">
               Exercise caution and drive safe.
+            </p>
+          </div>
+        )}
+
+        {!hasAccidentZones && hasTrafficAlerts && (
+          <div
+            className="relative overflow-hidden rounded-xl p-[22px] text-left"
+            style={railCardSurface}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-base leading-none text-amber-300" aria-hidden>
+                ℹ️
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-300/90">
+                Traffic alerts
+              </span>
+            </div>
+
+            <p className="text-xs font-bold leading-snug text-amber-200/90">
+              {trafficIncidentCount} traffic incident
+              {trafficIncidentCount > 1 ? "s" : ""} on your route (not accident-prone).
+            </p>
+
+            <p className="mt-2.5 text-[11px] font-normal leading-relaxed text-white/35">
+              Allow extra time; no confirmed accident cluster reported.
             </p>
           </div>
         )}
@@ -401,20 +433,11 @@ export function FullscreenMapLayout({
       </motion.div>
 
       {/* Cinematic Accident Detail Panel */}
-      {selectedAccidentZone && (
+      {selectedIncident && (
         <FullscreenCinematicAccidentPanel
-          isVisible={!!selectedAccidentZone}
-          onClose={() => setSelectedAccidentZone(null)}
-          zone={{
-            name: selectedAccidentZone.name || "Delhi-Gurgaon Highway",
-            riskScore: selectedAccidentZone.riskScore || 88,
-            reason: selectedAccidentZone.reason || "High traffic congestion and accident-prone junctions",
-            recommendation: selectedAccidentZone.recommendation || "Consider alternate route. Exercise extreme caution if this route is unavoidable.",
-            warning: selectedAccidentZone.warning || "High-risk zone. Avoid during adverse weather conditions.",
-            severity: selectedAccidentZone.severity || "High",
-            incidentsReported: selectedAccidentZone.incidentsReported || 128,
-            lastUpdated: selectedAccidentZone.lastUpdated || "2h ago"
-          }}
+          isVisible={!!selectedIncident}
+          onClose={() => setSelectedIncident(null)}
+          zone={buildCinematicPanelData(selectedIncident)}
         />
       )}
 
