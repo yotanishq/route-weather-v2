@@ -364,7 +364,7 @@ export function FullscreenMapLayout({
                 }
               `}
             >
-              <span>Accident Zones</span>
+              <span>Road Events</span>
               <span className="text-[10px]">⚠️</span>
             </button>
           </div>

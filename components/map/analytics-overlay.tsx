@@ -50,7 +50,7 @@ function getTravelAdvice(
 
   if (hasHighSeverity) {
     return {
-      message: "🔴 High Risk Route - Major accident zones detected",
+      message: "🔴 High Risk Route - Major road events detected",
       icon: "🔴",
       colorClass: "text-red-400"
     }
