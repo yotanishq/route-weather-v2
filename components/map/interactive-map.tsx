@@ -19,7 +19,6 @@ import {
   getMarkerPresentation,
   getRiskScore
 } from "@/lib/accident-incident-copy"
-import { analyzeRouteDanger } from "@/lib/route-danger-detection"
 
 import Map, {
   Marker,
@@ -347,17 +346,14 @@ export function InteractiveMap({
   )
   const trafficIncidentCount = accidentZones.length - accidentProneZones.length
 
-  const dangerAnalysis = analyzeRouteDanger(
-    routeCoordinates as [number, number][],
-    accidentProneZones.map((zone, index) => ({
-      id: `tomtom-accident-${index}`,
-      name: zone.roadName,
-      coordinates: [zone.lng, zone.lat],
-      severity: zone.severity,
-      reason: zone.description,
-      riskScore: getRiskScore(zone)
-    }))
-  )
+  // Calculate safety score based on real TomTom incidents
+  const totalDangerZones = accidentProneZones.length
+  let routeSafetyScore = "Safe"
+  if (accidentProneZones.some(z => z.severity === "high")) {
+    routeSafetyScore = "High Risk"
+  } else if (accidentProneZones.length > 2) {
+    routeSafetyScore = "Moderate Risk"
+  }
 
   const hasStorm =
     weatherConditions.includes("Thunderstorm")
@@ -407,9 +403,9 @@ export function InteractiveMap({
       onExitFullscreen={onToggleFullscreen || (() => {})}
       distance={distance}
       duration={duration}
-      routeSafetyScore={dangerAnalysis.routeSafetyScore}
+      routeSafetyScore={routeSafetyScore}
       travelAdvice={travelAdvice}
-      totalDangerZones={dangerAnalysis.totalDangerZones}
+      totalDangerZones={totalDangerZones}
       adviceColor={adviceColor}
       mapMode={mapMode}
       setMapMode={setMapMode}
