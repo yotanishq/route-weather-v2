@@ -64,6 +64,10 @@ app.get('/health', (req, res) => {
 const testRoutes = require('./routes/testRoutes');
 app.use('/api', testRoutes);
 
+// Route routes (GraphHopper)
+const routeRoutes = require('./routes/routeRoutes');
+app.use('/api', routeRoutes);
+
 // Start server with port conflict handling
 function startServer(port) {
   const server = app.listen(port, () => {
@@ -100,7 +104,8 @@ function startServer(port) {
 // Check for existing instance and start server
 checkExistingInstance();
 
-// Temporary: Log TOMTOM_API_KEY for debugging
+// Temporary: Log API keys for debugging
 console.log('🔑 TOMTOM_API_KEY:', process.env.TOMTOM_API_KEY ? '✅ Loaded' : '❌ NOT FOUND');
+console.log('🔑 GRAPHHOPPER_API_KEY:', process.env.GRAPHHOPPER_API_KEY ? '✅ Loaded' : '❌ NOT FOUND');
 
 startServer(PORT);
