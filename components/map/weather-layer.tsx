@@ -65,24 +65,12 @@ export function WeatherLayer({
           return (
 
             <Marker
-              key={index}
+              key={`${point.coord[0]}-${point.coord[1]}`}
               longitude={point.coord[0]}
               latitude={point.coord[1]}
               onClick={(e) => {
                 e.originalEvent.stopPropagation()
                 setSelectedWeatherPoint(point)
-                
-                if (mapRef.current) {
-                  const currentZoom = mapRef.current.getZoom()
-                  const targetZoom = Math.min(currentZoom + 1, 9)
-                  
-                  mapRef.current.flyTo({
-                    center: [point.coord[0], point.coord[1]],
-                    zoom: targetZoom,
-                    duration: 1200,
-                    essential: true
-                  })
-                }
               }}
             >
 
