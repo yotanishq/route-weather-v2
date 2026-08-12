@@ -85,14 +85,12 @@ export function InteractiveMap({
     weatherPoints,
     distance,
     duration,
-
+    accidentZones,
     setRouteGeoJSON,
     setWeatherPoints,
     setDistance,
     setDuration,
-
-    accidentZones
-
+    setAccidentZones
   } = useRouteStore()
 
   const {

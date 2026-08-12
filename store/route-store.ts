@@ -1,111 +1,125 @@
 import { create } from "zustand"
 import type { AccidentZone } from "@/lib/accidents"
+import type { Journey, WeatherPoint } from "@/lib/journey"
+import { createEmptyJourney } from "@/lib/journey"
 
 interface RouteStore {
+  journey: Journey
 
+  // Computed fields for backward compatibility
   routeGeoJSON: any
-  weatherPoints: any[]
-
+  weatherPoints: WeatherPoint[]
   distance: number
   duration: number
-
   travelAdvice: string
-
   accidentZones: AccidentZone[]
-
   departureDate: string
   departureTime: string
 
-  setRouteGeoJSON: (
-    data: any
-  ) => void
+  setJourney: (journey: Journey) => void
 
-  setWeatherPoints: (
-    points: any[]
-  ) => void
+  setJourneyOrigin: (origin: string) => void
+  setJourneyDestination: (destination: string) => void
 
-  setDistance: (
-    distance: number
-  ) => void
-
-  setDuration: (
-    duration: number
-  ) => void
-
-  setTravelAdvice: (
-    advice: string
-  ) => void
-
-  setAccidentZones: (
-    zones: AccidentZone[]
-  ) => void
-
-  setDepartureDate: (
-    date: string
-  ) => void
-
-  setDepartureTime: (
-    time: string
-  ) => void
+  setRouteGeoJSON: (data: any) => void
+  setWeatherPoints: (points: WeatherPoint[]) => void
+  setDistance: (distance: number) => void
+  setDuration: (duration: number) => void
+  setTravelAdvice: (advice: string) => void
+  setAccidentZones: (zones: AccidentZone[]) => void
+  setDepartureDate: (date: string) => void
+  setDepartureTime: (time: string) => void
 }
 
 export const useRouteStore =
-  create<RouteStore>((set) => ({
+  create<RouteStore>((set) => {
 
-    routeGeoJSON: null,
+    const emptyJourney = createEmptyJourney()
 
-    weatherPoints: [],
+    return {
 
-    distance: 0,
+      journey: emptyJourney,
 
-    duration: 0,
+      // Legacy fields for backward compatibility - derived from journey
+      routeGeoJSON: emptyJourney.routeGeoJSON,
+      weatherPoints: emptyJourney.weatherPoints,
+      distance: emptyJourney.distance,
+      duration: emptyJourney.duration,
+      travelAdvice: emptyJourney.travelAdvice,
+      accidentZones: emptyJourney.accidentZones,
+      departureDate: emptyJourney.departureDate,
+      departureTime: emptyJourney.departureTime,
 
-    travelAdvice: "",
+      setJourney: (journey) =>
+        set((state) => ({
+          journey,
+          routeGeoJSON: journey.routeGeoJSON,
+          weatherPoints: journey.weatherPoints,
+          distance: journey.distance,
+          duration: journey.duration,
+          travelAdvice: journey.travelAdvice,
+          accidentZones: journey.accidentZones,
+          departureDate: journey.departureDate,
+          departureTime: journey.departureTime,
+        })),
 
-    accidentZones: [],
+      setRouteGeoJSON: (data) =>
+        set((state) => ({
+          journey: { ...state.journey, routeGeoJSON: data },
+          routeGeoJSON: data
+        })),
 
-    departureDate: new Date().toISOString().split("T")[0],
+      setWeatherPoints: (points) =>
+        set((state) => ({
+          journey: { ...state.journey, weatherPoints: points },
+          weatherPoints: points
+        })),
 
-    departureTime: new Date().toTimeString().slice(0, 5),
+      setDistance: (distance) =>
+        set((state) => ({
+          journey: { ...state.journey, distance },
+          distance
+        })),
 
-    setRouteGeoJSON: (data) =>
-      set({
-        routeGeoJSON: data
-      }),
+      setDuration: (duration) =>
+        set((state) => ({
+          journey: { ...state.journey, duration },
+          duration
+        })),
 
-    setWeatherPoints: (points) =>
-      set({
-        weatherPoints: points
-      }),
+      setTravelAdvice: (advice) =>
+        set((state) => ({
+          journey: { ...state.journey, travelAdvice: advice },
+          travelAdvice: advice
+        })),
 
-    setDistance: (distance) =>
-      set({
-        distance
-      }),
+      setAccidentZones: (zones) =>
+        set((state) => ({
+          journey: { ...state.journey, accidentZones: zones },
+          accidentZones: zones
+        })),
 
-    setDuration: (duration) =>
-      set({
-        duration
-      }),
+      setDepartureDate: (date) =>
+        set((state) => ({
+          journey: { ...state.journey, departureDate: date },
+          departureDate: date
+        })),
 
-    setTravelAdvice: (advice) =>
-      set({
-        travelAdvice: advice
-      }),
+      setDepartureTime: (time) =>
+        set((state) => ({
+          journey: { ...state.journey, departureTime: time },
+          departureTime: time
+        })),
 
-    setAccidentZones: (zones) =>
-      set({
-        accidentZones: zones
-      }),
+      setJourneyOrigin: (origin) =>
+        set((state) => ({
+          journey: { ...state.journey, origin }
+        })),
 
-    setDepartureDate: (date) =>
-      set({
-        departureDate: date
-      }),
+      setJourneyDestination: (destination) =>
+        set((state) => ({
+          journey: { ...state.journey, destination }
+        }))
 
-    setDepartureTime: (time) =>
-      set({
-        departureTime: time
-      })
-
-  }))
+    }
+  })
