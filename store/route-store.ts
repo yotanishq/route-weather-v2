@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import type { AccidentZone } from "@/lib/accidents"
-import type { Journey, WeatherPoint } from "@/lib/journey"
+import type { Journey, WeatherPoint, RouteCheckpoint } from "@/lib/journey"
 import { createEmptyJourney } from "@/lib/journey"
 
 interface RouteStore {
@@ -20,6 +20,7 @@ interface RouteStore {
 
   setJourneyOrigin: (origin: string) => void
   setJourneyDestination: (destination: string) => void
+  setCheckpoints: (checkpoints: RouteCheckpoint[]) => void
 
   setRouteGeoJSON: (data: any) => void
   setWeatherPoints: (points: WeatherPoint[]) => void
@@ -119,6 +120,11 @@ export const useRouteStore =
       setJourneyDestination: (destination) =>
         set((state) => ({
           journey: { ...state.journey, destination }
+        })),
+
+      setCheckpoints: (checkpoints) =>
+        set((state) => ({
+          journey: { ...state.journey, checkpoints }
         }))
 
     }

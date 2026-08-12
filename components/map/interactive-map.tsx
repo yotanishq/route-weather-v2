@@ -34,6 +34,7 @@ import { AnalyticsOverlay } from "./analytics-overlay"
 
 import { getCoordinates, getRoute } from "@/lib/routing"
 import { getWeather } from "@/lib/weather"
+import { generateCheckpoints } from "@/lib/journey"
 
 import {
   useRouteStore
@@ -86,11 +87,14 @@ export function InteractiveMap({
     distance,
     duration,
     accidentZones,
+    departureDate,
+    departureTime,
     setRouteGeoJSON,
     setWeatherPoints,
     setDistance,
     setDuration,
-    setAccidentZones
+    setAccidentZones,
+    setCheckpoints
   } = useRouteStore()
 
   const {
@@ -191,6 +195,16 @@ export function InteractiveMap({
 
       setDistance(parseFloat(distanceKm))
       setDuration(summary.duration)
+
+      // Generate checkpoints with ETA
+      const departureDateTime = new Date(`${departureDate}T${departureTime}`)
+      const checkpoints = generateCheckpoints(
+        coordinates,
+        parseFloat(distanceKm),
+        summary.duration,
+        departureDateTime
+      )
+      setCheckpoints(checkpoints)
 
       const sampledPoints =
         coordinates.filter(
