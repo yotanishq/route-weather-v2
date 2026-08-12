@@ -14,6 +14,18 @@ export interface WeatherPoint {
   }
 }
 
+export interface WeatherForecast {
+  forecastTime: Date
+  temperature: number
+  feelsLike: number
+  humidity: number
+  condition: string
+  description: string
+  windSpeed: number
+  visibility?: number
+  precipitationProbability?: number
+}
+
 export interface RouteCheckpoint {
   latitude: number
   longitude: number
@@ -21,6 +33,7 @@ export interface RouteCheckpoint {
   distanceFromStart: number // in km
   elapsedDuration: number // in seconds
   estimatedArrivalTime: Date
+  forecast?: WeatherForecast | null
 }
 
 export interface Journey {
@@ -177,4 +190,80 @@ function findClosestCoordinateIndex(cumulativeDistances: number[], targetDistanc
   }
 
   return closestIndex
+}
+
+/**
+ * Find the forecast entry closest to the target ETA
+ * Returns null if no forecast is available within the forecast horizon
+ */
+export function findClosestForecast(
+  forecasts: WeatherForecast[],
+  targetETA: Date
+): WeatherForecast | null {
+  if (!forecasts || forecasts.length === 0) {
+    return null
+  }
+
+  const targetTime = targetETA.getTime()
+  
+  // Check if target is beyond forecast horizon (5 days = 432000000 ms)
+  const firstForecastTime = forecasts[0].forecastTime.getTime()
+  const lastForecastTime = forecasts[forecasts.length - 1].forecastTime.getTime()
+  const forecastHorizon = 5 * 24 * 60 * 60 * 1000 // 5 days in milliseconds
+
+  if (targetTime < firstForecastTime - forecastHorizon || targetTime > lastForecastTime + forecastHorizon) {
+    return null
+  }
+
+  // Find closest forecast by time
+  let closestForecast = forecasts[0]
+  let closestDiff = Math.abs(forecasts[0].forecastTime.getTime() - targetTime)
+
+  for (let i = 1; i < forecasts.length; i++) {
+    const diff = Math.abs(forecasts[i].forecastTime.getTime() - targetTime)
+    if (diff < closestDiff) {
+      closestDiff = diff
+      closestForecast = forecasts[i]
+    }
+  }
+
+  return closestForecast
+}
+
+/**
+ * Group checkpoints by coordinate proximity for efficient API calls
+ * Checkpoints within 50km of each other share the same forecast request
+ */
+export function groupCheckpointsByLocation(
+  checkpoints: RouteCheckpoint[]
+): Map<string, RouteCheckpoint[]> {
+  const groups = new Map<string, RouteCheckpoint[]>()
+  const proximityThresholdKm = 50
+
+  for (const checkpoint of checkpoints) {
+    let grouped = false
+
+    for (const [key, group] of groups.entries()) {
+      const representative = group[0]
+      const distance = haversineDistance(
+        representative.latitude,
+        representative.longitude,
+        checkpoint.latitude,
+        checkpoint.longitude
+      )
+
+      if (distance <= proximityThresholdKm) {
+        group.push(checkpoint)
+        grouped = true
+        break
+      }
+    }
+
+    if (!grouped) {
+      const key = `${checkpoint.latitude.toFixed(4)},${checkpoint.longitude.toFixed(4)}`
+      groups.set(key, [checkpoint])
+    }
+  }
+
+  return groups
 }

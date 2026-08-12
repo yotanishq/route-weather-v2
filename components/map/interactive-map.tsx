@@ -33,8 +33,8 @@ import "maplibre-gl/dist/maplibre-gl.css"
 import { AnalyticsOverlay } from "./analytics-overlay"
 
 import { getCoordinates, getRoute } from "@/lib/routing"
-import { getWeather } from "@/lib/weather"
-import { generateCheckpoints } from "@/lib/journey"
+import { getWeather, getForecast } from "@/lib/weather"
+import { generateCheckpoints, findClosestForecast, groupCheckpointsByLocation } from "@/lib/journey"
 
 import {
   useRouteStore
@@ -204,8 +204,35 @@ export function InteractiveMap({
         summary.duration,
         departureDateTime
       )
-      setCheckpoints(checkpoints)
 
+      // Group checkpoints by location for efficient API calls
+      const checkpointGroups = groupCheckpointsByLocation(checkpoints)
+
+      // Fetch forecast for each location group
+      const checkpointsWithForecast = await Promise.all(
+        Array.from(checkpointGroups.entries()).map(async ([key, group]) => {
+          const representative = group[0]
+          try {
+            const forecasts = await getForecast(representative.latitude, representative.longitude)
+
+            // Match each checkpoint in the group to the closest forecast
+            return group.map(checkpoint => ({
+              ...checkpoint,
+              forecast: findClosestForecast(forecasts, checkpoint.estimatedArrivalTime)
+            }))
+          } catch (error) {
+            // If forecast fails, mark as unavailable
+            return group.map(checkpoint => ({
+              ...checkpoint,
+              forecast: null
+            }))
+          }
+        })
+      ).then(results => results.flat())
+
+      setCheckpoints(checkpointsWithForecast)
+
+      // Keep existing weather pipeline for backward compatibility
       const sampledPoints =
         coordinates.filter(
           (_: any, index: number) =>

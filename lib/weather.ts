@@ -44,3 +44,28 @@ export async function getWeather(lat: number, lon: number) {
     uvi
   }
 }
+
+export async function getForecast(lat: number, lon: number) {
+  const key = OPENWEATHER_API_KEY
+  // Use 5-day forecast endpoint (3-hour intervals)
+  const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${key}&units=metric`
+
+  const forecastResult = await fetchJson(forecastUrl)
+
+  if (!forecastResult.list || !Array.isArray(forecastResult.list)) {
+    throw new Error('Invalid forecast response')
+  }
+
+  // Transform raw API response to our internal model
+  return forecastResult.list.map((entry: any) => ({
+    forecastTime: new Date(entry.dt * 1000),
+    temperature: entry.main.temp,
+    feelsLike: entry.main.feels_like,
+    humidity: entry.main.humidity,
+    condition: entry.weather[0]?.main || 'Unknown',
+    description: entry.weather[0]?.description || '',
+    windSpeed: entry.wind?.speed || 0,
+    visibility: entry.visibility,
+    precipitationProbability: entry.pop
+  }))
+}
