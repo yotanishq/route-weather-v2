@@ -12,9 +12,9 @@ import { AccidentLayer } from "./accident-layer"
 import AccidentDetailPanel from "./accident-detail-panel"
 import { FullscreenMapLayout } from "./fullscreen-map-layout"
 import {
-  getAccidentsAlongRoute,
-  type AccidentZone as RouteAccidentZone
+  getAccidentsAlongRoute
 } from "@/lib/accidents"
+import type { AccidentZone as RouteAccidentZone } from "@/lib/accidents"
 import {
   getMarkerPresentation,
   getRiskScore
@@ -35,6 +35,7 @@ import { AnalyticsOverlay } from "./analytics-overlay"
 import { getCoordinates, getRoute } from "@/lib/routing"
 import { getWeather, getForecast } from "@/lib/weather"
 import { generateCheckpoints, findClosestForecast, groupCheckpointsByLocation } from "@/lib/journey"
+import { generateJourneyAnalysis } from "@/lib/journey-analysis"
 
 import {
   useRouteStore
@@ -94,7 +95,8 @@ export function InteractiveMap({
     setDistance,
     setDuration,
     setAccidentZones,
-    setCheckpoints
+    setCheckpoints,
+    setAnalysis
   } = useRouteStore()
 
   const {
@@ -286,6 +288,11 @@ export function InteractiveMap({
         tomtomKey
       )
       useRouteStore.getState().setAccidentZones(accidents)
+
+      // Generate journey analysis
+      const currentJourney = useRouteStore.getState().journey
+      const analysis = generateJourneyAnalysis(currentJourney)
+      setAnalysis(analysis)
 
       let dynamicRouteColor = "#34d399"
 

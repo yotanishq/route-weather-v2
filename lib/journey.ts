@@ -36,6 +36,44 @@ export interface RouteCheckpoint {
   forecast?: WeatherForecast | null
 }
 
+export interface WeatherFactor {
+  category: string
+  score: number // 0-100
+  description: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
+}
+
+export interface TrafficFactor {
+  category: string
+  score: number // 0-100
+  description: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
+}
+
+export interface JourneyWarning {
+  type: 'Heavy Rain' | 'Low Visibility' | 'Severe Congestion' | 'Road Closure' | 'High Winds' | 'Thunderstorm' | 'Extreme Temperature'
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  description: string
+  affectedSegment?: string
+}
+
+export interface TransportRecommendation {
+  mode: string
+  confidence: number // 0-100
+  reason: string
+  alternatives: string[]
+}
+
+export interface JourneyAnalysis {
+  overallRiskScore: number // 0-100
+  overallRiskLevel: 'low' | 'medium' | 'high' | 'critical'
+  weatherFactors: WeatherFactor[]
+  trafficFactors: TrafficFactor[]
+  warnings: JourneyWarning[]
+  transportRecommendations: TransportRecommendation[]
+  analysisTimestamp: Date
+}
+
 export interface Journey {
   origin: string
   destination: string
@@ -48,6 +86,7 @@ export interface Journey {
   accidentZones: AccidentZone[]
   travelAdvice: string
   checkpoints: RouteCheckpoint[]
+  analysis?: JourneyAnalysis | null
 }
 
 export function createEmptyJourney(): Journey {
@@ -63,6 +102,7 @@ export function createEmptyJourney(): Journey {
     accidentZones: [],
     travelAdvice: "",
     checkpoints: [],
+    analysis: null,
   }
 }
 
