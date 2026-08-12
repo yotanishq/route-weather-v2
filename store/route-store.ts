@@ -13,6 +13,9 @@ interface RouteStore {
 
   accidentZones: AccidentZone[]
 
+  departureDate: string
+  departureTime: string
+
   setRouteGeoJSON: (
     data: any
   ) => void
@@ -36,6 +39,14 @@ interface RouteStore {
   setAccidentZones: (
     zones: AccidentZone[]
   ) => void
+
+  setDepartureDate: (
+    date: string
+  ) => void
+
+  setDepartureTime: (
+    time: string
+  ) => void
 }
 
 export const useRouteStore =
@@ -52,6 +63,10 @@ export const useRouteStore =
     travelAdvice: "",
 
     accidentZones: [],
+
+    departureDate: new Date().toISOString().split("T")[0],
+
+    departureTime: new Date().toTimeString().slice(0, 5),
 
     setRouteGeoJSON: (data) =>
       set({
@@ -81,6 +96,16 @@ export const useRouteStore =
     setAccidentZones: (zones) =>
       set({
         accidentZones: zones
+      }),
+
+    setDepartureDate: (date) =>
+      set({
+        departureDate: date
+      }),
+
+    setDepartureTime: (time) =>
+      set({
+        departureTime: time
       })
 
   }))

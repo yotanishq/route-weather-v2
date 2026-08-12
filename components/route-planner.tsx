@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,71 @@ export function RoutePlanner({
   const storeDistance = useRouteStore((state) => state.distance);
   const storeDuration = useRouteStore((state) => state.duration);
   const accidentZones = useRouteStore((state) => state.accidentZones);
+  
+  const departureDate = useRouteStore((state) => state.departureDate);
+  const departureTime = useRouteStore((state) => state.departureTime);
+  const setDepartureDate = useRouteStore((state) => state.setDepartureDate);
+  const setDepartureTime = useRouteStore((state) => state.setDepartureTime);
+
+  const [dateError, setDateError] = useState("");
+  const [timeError, setTimeError] = useState("");
+
+  function validateDeparture() {
+    let hasError = false;
+
+    // Validate date
+    if (!departureDate) {
+      setDateError("Please select a departure date");
+      hasError = true;
+    } else {
+      const selectedDate = new Date(departureDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        setDateError("Departure date cannot be in the past");
+        hasError = true;
+      } else {
+        setDateError("");
+      }
+    }
+
+    // Validate time
+    if (!departureTime) {
+      setTimeError("Please select a departure time");
+      hasError = true;
+    } else {
+      const selectedDateTime = new Date(`${departureDate}T${departureTime}`);
+      const now = new Date();
+      
+      if (selectedDateTime < now) {
+        setTimeError("Departure time cannot be in the past");
+        hasError = true;
+      } else {
+        setTimeError("");
+      }
+    }
+
+    return !hasError;
+  }
+
+  function handleGenerateRoute() {
+    if (validateDeparture()) {
+      onGenerateRoute();
+    }
+  }
+
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setDepartureDate(e.target.value);
+    if (dateError) setDateError("");
+  }
+
+  function handleTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setDepartureTime(e.target.value);
+    if (timeError) setTimeError("");
+  }
+
+  const isFormValid = departureDate && departureTime && !dateError && !timeError;
 
   const displayDistance = storeDistance ? `${storeDistance} km` : "--";
   const displayDuration = storeDuration
@@ -166,8 +232,9 @@ export function RoutePlanner({
 
             <Input
               type="date"
-              className="pl-14 h-12 bg-slate-50/80 border-slate-200 rounded-2xl text-sm focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
-              defaultValue={new Date().toISOString().split("T")[0]}
+              value={departureDate}
+              onChange={handleDateChange}
+              className={`pl-14 h-12 bg-slate-50/80 border-slate-200 rounded-2xl text-sm focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/10 ${dateError ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10' : ''}`}
             />
 
           </div>
@@ -180,13 +247,26 @@ export function RoutePlanner({
 
             <Input
               type="time"
-              className="pl-14 h-12 bg-slate-50/80 border-slate-200 rounded-2xl text-sm focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
-              defaultValue="09:00"
+              value={departureTime}
+              onChange={handleTimeChange}
+              className={`pl-14 h-12 bg-slate-50/80 border-slate-200 rounded-2xl text-sm focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/10 ${timeError ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10' : ''}`}
             />
 
           </div>
 
         </div>
+
+        {/* Validation Messages */}
+        {(dateError || timeError) && (
+          <div className="mb-5 space-y-1">
+            {dateError && (
+              <p className="text-xs text-red-500">{dateError}</p>
+            )}
+            {timeError && (
+              <p className="text-xs text-red-500">{timeError}</p>
+            )}
+          </div>
+        )}
 
         {/* BUTTON */}
 
@@ -196,8 +276,9 @@ export function RoutePlanner({
         >
 
           <Button
-            onClick={onGenerateRoute}
-            className="w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white font-medium shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30"
+            onClick={handleGenerateRoute}
+            disabled={!isFormValid}
+            className={`w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white font-medium shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 ${!isFormValid ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
 
             <Route className="w-4 h-4 mr-2" />
