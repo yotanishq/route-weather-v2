@@ -10,7 +10,6 @@ interface FullscreenCinematicAccidentPanelProps {
     incidentLabel: string
     riskScore: number
     reason: string
-    recommendation: string
     warning: string
     severity: string
     isAccidentProne: boolean
@@ -73,8 +72,8 @@ export function FullscreenCinematicAccidentPanel({
               </div>
             </div>
             
-            <div className="relative grid grid-cols-4 gap-2">
-              
+            <div className="relative grid grid-cols-3 gap-2">
+
               <div className="bg-gradient-to-br from-black/40 to-black/35 backdrop-blur-2xl rounded-[17px] p-[12px] border border-white/14 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_40px_rgba(0,0,0,0.3)]">
                 <div className="text-[9px] font-medium tracking-[0.18em] uppercase text-white/30 mb-1">
                   {zone.isAccidentProne ? "Accident reason" : "Incident details"}
@@ -83,16 +82,7 @@ export function FullscreenCinematicAccidentPanel({
                   {zone.reason}
                 </div>
               </div>
-              
-              <div className="bg-gradient-to-br from-black/40 to-black/35 backdrop-blur-2xl rounded-[17px] p-[12px] border border-white/14 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_40px_rgba(0,0,0,0.3)]">
-                <div className="text-[9px] font-medium tracking-[0.18em] uppercase text-white/30 mb-1">
-                  Travel recommendation
-                </div>
-                <div className="text-xs text-white/95 font-normal leading-relaxed">
-                  {zone.recommendation}
-                </div>
-              </div>
-              
+
               <div className={`bg-gradient-to-br from-black/40 to-black/35 backdrop-blur-2xl rounded-[17px] p-[12px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_40px_rgba(0,0,0,0.3)] ${zone.isAccidentProne ? "border-yellow-500/25" : "border-white/14"}`}>
                 <div className="text-[9px] font-medium tracking-[0.18em] uppercase text-white/30 mb-1 flex items-center gap-1">
                   <span className={`text-[10px] ${zone.isAccidentProne ? "text-yellow-300" : "text-white/50"}`}>
@@ -104,7 +94,7 @@ export function FullscreenCinematicAccidentPanel({
                   {zone.warning}
                 </div>
               </div>
-              
+
               <div className="bg-gradient-to-br from-black/40 to-black/35 backdrop-blur-2xl rounded-[17px] p-[12px] border border-white/14 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_40px_rgba(0,0,0,0.3)] flex flex-col justify-center gap-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-medium tracking-[0.18em] uppercase text-white/30">
@@ -131,7 +121,7 @@ export function FullscreenCinematicAccidentPanel({
                   </span>
                 </div>
               </div>
-              
+
             </div>
             
           </div>

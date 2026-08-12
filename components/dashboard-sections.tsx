@@ -351,9 +351,9 @@ export function DashboardSections() {
               <Thermometer className="w-6 h-6 text-primary" />
             </div>
             <div className="flex-1">
-              <div className="text-sm font-semibold text-foreground">Best Travel Window</div>
+              <div className="text-sm font-semibold text-foreground">Weather Overview</div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                Tomorrow 6-10 AM offers optimal conditions with 92+ weather scores
+                View current weather conditions along your routes
               </div>
             </div>
             <Button size="sm" className="rounded-xl bg-primary text-white hover:bg-primary/90">

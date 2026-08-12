@@ -111,10 +111,10 @@ export default function HowItWorksPage() {
               <div className="flex-1">
                 <h2 className="text-2xl font-semibold text-foreground mb-3">Understand Conditions Before Traveling</h2>
                 <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-                  Aether provides travel recommendations and safety insights based on the weather and road conditions along your route. This helps you make informed decisions about when to travel, what to expect, and how to prepare.
+                  Aether displays weather and road conditions along your route. This helps you make informed decisions about when to travel, what to expect, and how to prepare.
                 </p>
                 <p className="text-muted-foreground">
-                  Get alerts for severe weather, understand potential delays, and plan alternative routes if needed—all before you begin your journey.
+                  View weather conditions, understand potential delays, and plan alternative routes if needed—all before you begin your journey.
                 </p>
               </div>
             </motion.div>

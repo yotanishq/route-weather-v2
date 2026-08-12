@@ -156,7 +156,7 @@ export function AnalyticsOverlay({
           .slice(0, 2)
           .map((zone) => `${zone.roadName} — ${zone.severity} severity`)
           .join(" · ")
-      : "AI-powered weather sync for safer travel."
+      : "Weather data synchronized for safer travel."
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -261,8 +261,8 @@ export function AnalyticsOverlay({
                   type="button"
                   onClick={onToggleFullscreen}
                   className={`${iconButton} text-emerald-400/90 hover:text-emerald-400`}
-                  title="Enter intelligence mode"
-                  aria-label="Enter intelligence mode"
+                  title="Enter fullscreen mode"
+                  aria-label="Enter fullscreen mode"
                 >
                   <Maximize2 className="h-3 w-3" strokeWidth={2} />
                 </button>
@@ -298,9 +298,9 @@ export function AnalyticsOverlay({
           </div>
         )}
 
-        {/* AI insights */}
+        {/* Route insights */}
         <div>
-          <div className={`${sectionLabel} mb-3`}>AI Insights</div>
+          <div className={`${sectionLabel} mb-3`}>Route Insights</div>
           <div className="grid grid-cols-[18px_1fr] gap-x-2 gap-y-1.5 text-left">
             <span
               className="self-center text-[18px] leading-none"

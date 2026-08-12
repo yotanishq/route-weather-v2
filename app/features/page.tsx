@@ -129,7 +129,7 @@ export default function FeaturesPage() {
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-3">Safety Insights</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Get travel recommendations based on weather and road conditions. Understand potential risks before you begin your journey.
+                View weather and road conditions along your route. Understand potential risks before you begin your journey.
               </p>
             </motion.div>
           </div>

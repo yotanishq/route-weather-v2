@@ -10,7 +10,6 @@ import {
   Calendar,
   Clock,
   Plus,
-  Sparkles,
   Route,
 } from "lucide-react";
 import { useRouteStore } from "@/store/route-store";
@@ -258,27 +257,6 @@ export function RoutePlanner({
 
         </motion.div>
 
-        {/* AI SUGGESTION */}
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          whileHover={{ scale: 1.01 }}
-          className="mt-4 flex items-center gap-2 p-3 bg-primary/5 rounded-xl border border-primary/10 cursor-pointer"
-        >
-
-          <Sparkles className="w-4 h-4 text-primary" />
-
-          <span className="text-xs text-muted-foreground">
-            AI suggests departing at{" "}
-            <span className="font-medium text-foreground">
-              6:00 AM
-            </span>{" "}
-            for optimal conditions
-          </span>
-
-        </motion.div>
 
       </div>
     </motion.div>

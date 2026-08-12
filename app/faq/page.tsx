@@ -83,7 +83,7 @@ export default function FAQPage() {
                   How are route conditions calculated?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground leading-relaxed">
-                  Route conditions are calculated by combining multiple data sources. Weather data is retrieved for points along your route, and road event information (construction, closures, congestion, hazards) is fetched from traffic services. These are analyzed together to provide comprehensive route insights and recommendations.
+                  Route conditions are calculated by combining multiple data sources. Weather data is retrieved for points along your route, and road event information (construction, closures, congestion, hazards) is fetched from traffic services. These are displayed together to provide comprehensive route insights.
                 </AccordionContent>
               </AccordionItem>
 

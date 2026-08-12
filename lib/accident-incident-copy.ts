@@ -51,28 +51,6 @@ export function getRiskScore(zone: AccidentZone): number {
   return Math.min(35, 15 + delay * 3)
 }
 
-export function getTravelRecommendation(zone: AccidentZone): string {
-  const road = zone.roadName !== "Unknown road" ? zone.roadName : "this section"
-
-  if (zone.isAccidentProne) {
-    if (zone.severity === "high") {
-      return `Avoid ${road} if possible. If you must travel here, reduce speed, increase following distance, and follow local traffic advisories.`
-    }
-    return `Use caution on ${road}. Stay alert for sudden stops and emergency vehicles.`
-  }
-
-  switch (zone.incidentType) {
-    case "closure":
-      return `Expect blockage or detours on ${road}. Plan extra time or use an alternate route.`
-    case "construction":
-      return `Lane changes or reduced capacity on ${road}. Follow signage and merge early.`
-    case "congestion":
-      return `Heavy traffic on ${road}. Allow extra travel time; avoid unnecessary lane changes.`
-    default:
-      return `Traffic disruption on ${road}. Monitor conditions and adjust speed to flow.`
-  }
-}
-
 export function getSafetyWarning(zone: AccidentZone): string {
   if (zone.isAccidentProne) {
     if (zone.severity === "high") {
@@ -182,7 +160,6 @@ export function buildCinematicPanelData(zone: AccidentZone) {
     incidentLabel: getIncidentTypeLabel(zone.incidentType),
     riskScore: getRiskScore(zone),
     reason: zone.description,
-    recommendation: getTravelRecommendation(zone),
     warning: getSafetyWarning(zone),
     severity: getSeverityLabel(zone),
     isAccidentProne: zone.isAccidentProne,

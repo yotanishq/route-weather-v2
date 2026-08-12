@@ -66,7 +66,6 @@ export default function TermsPage() {
                   <li>Plan routes between locations with distance and duration estimates</li>
                   <li>View weather conditions along planned routes</li>
                   <li>Access road event information including construction, closures, and hazards</li>
-                  <li>Receive travel recommendations based on weather and road conditions</li>
                 </ul>
               </section>
 

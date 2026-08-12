@@ -120,7 +120,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-3">Travel Insights</h3>
                 <p className="text-muted-foreground">
-                  Get recommendations based on weather and road conditions to make informed travel decisions.
+                  View weather and road conditions along your route to make informed travel decisions.
                 </p>
               </motion.div>
             </div>
