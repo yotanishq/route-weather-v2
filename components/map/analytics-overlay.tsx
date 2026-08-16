@@ -141,6 +141,7 @@ export function AnalyticsOverlay({
 }: AnalyticsOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
 
+  const journey = useRouteStore((state) => state.journey)
   const accidentZones = useRouteStore((state) => state.accidentZones)
   const weatherPoints = useRouteStore((state) => state.weatherPoints)
   const storeDistance = useRouteStore((state) => state.distance)
@@ -149,6 +150,9 @@ export function AnalyticsOverlay({
   const formattedStoreDuration = formatDuration(storeDuration)
   const travelInsight = getTravelAdvice(accidentZones, weatherPoints)
   const recommendedMode = getRecommendedMode(accidentZones, weatherPoints)
+
+  // Get highest-confidence transport recommendation from Journey analysis
+  const primaryRecommendation = journey.analysis?.transportRecommendations?.[0]
 
   const insightSecondaryText =
     accidentZones.length > 0
@@ -235,10 +239,26 @@ export function AnalyticsOverlay({
       className={`absolute ${positionClass} z-40 w-[252px] max-h-[52vh] overflow-hidden ${panelShell}`}
     >
       <div className="max-h-[52vh] space-y-2.5 overflow-y-auto overflow-x-hidden p-3.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        {/* Route stats */}
+        {/* Journey info */}
         <div>
-          <div className={`${sectionLabel} mb-3`}>Route</div>
+          <div className={`${sectionLabel} mb-3`}>Journey</div>
           <div className="space-y-2.5 rounded-xl bg-white/[0.03] p-2.5">
+            {journey.origin && journey.destination && (
+              <div className="flex items-center justify-between">
+                <span className={rowLabel}>Route</span>
+                <span className="text-xs font-bold text-white truncate max-w-[120px]">
+                  {journey.origin} → {journey.destination}
+                </span>
+              </div>
+            )}
+            {journey.departureDate && journey.departureTime && (
+              <div className="flex items-center justify-between">
+                <span className={rowLabel}>Departure</span>
+                <span className="text-xs font-bold text-white">
+                  {journey.departureDate} {journey.departureTime}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <span className={rowLabel}>Distance</span>
               <span className="text-xs font-bold text-white">{storeDistance} km</span>
@@ -249,6 +269,68 @@ export function AnalyticsOverlay({
                 {formattedStoreDuration}
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Risk analysis */}
+        {journey.analysis && (
+          <div>
+            <div className={`${sectionLabel} mb-3`}>Risk Analysis</div>
+            <div className="space-y-2.5 rounded-xl bg-white/[0.03] p-2.5">
+              <div className="flex items-center justify-between">
+                <span className={rowLabel}>Risk Level</span>
+                <span className={`text-xs font-bold ${
+                  journey.analysis.overallRiskLevel === 'critical' ? 'text-red-400' :
+                  journey.analysis.overallRiskLevel === 'high' ? 'text-orange-400' :
+                  journey.analysis.overallRiskLevel === 'medium' ? 'text-yellow-400' :
+                  'text-emerald-400'
+                }`}>
+                  {journey.analysis.overallRiskLevel.charAt(0).toUpperCase() + journey.analysis.overallRiskLevel.slice(1)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className={rowLabel}>Risk Score</span>
+                <span className="text-xs font-bold text-white">
+                  {journey.analysis.overallRiskScore}/100
+                </span>
+              </div>
+              {journey.analysis.warnings.length > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className={rowLabel}>Active Warnings</span>
+                  <span className="text-xs font-bold text-white">
+                    {journey.analysis.warnings.length}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Transport recommendation */}
+        {primaryRecommendation && (
+          <div>
+            <div className={`${sectionLabel} mb-3`}>Recommendation</div>
+            <div className="rounded-xl bg-white/[0.03] p-2.5">
+              <div className="flex items-center justify-between">
+                <span className={rowLabel}>Mode</span>
+                <span className="text-xs font-bold text-white truncate max-w-[120px]">
+                  {primaryRecommendation.mode}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className={rowLabel}>Confidence</span>
+                <span className="text-xs font-bold text-emerald-400">
+                  {primaryRecommendation.confidence}%
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Route stats */}
+        <div>
+          <div className={`${sectionLabel} mb-3`}>Route Stats</div>
+          <div className="space-y-2.5 rounded-xl bg-white/[0.03] p-2.5">
             <div className="flex items-center justify-between">
               <span className={rowLabel}>Best mode</span>
               <span className="text-xs font-bold text-white">{recommendedMode}</span>
