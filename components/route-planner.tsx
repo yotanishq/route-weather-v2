@@ -41,7 +41,8 @@ export function RoutePlanner({
   const storeDistance = useRouteStore((state) => state.distance);
   const storeDuration = useRouteStore((state) => state.duration);
   const accidentZones = useRouteStore((state) => state.accidentZones);
-  
+  const journey = useRouteStore((state) => state.journey);
+
   const departureDate = useRouteStore((state) => state.departureDate);
   const departureTime = useRouteStore((state) => state.departureTime);
   const setDepartureDate = useRouteStore((state) => state.setDepartureDate);
@@ -112,18 +113,27 @@ export function RoutePlanner({
     ? `${Math.floor(storeDuration / 3600)}h ${Math.floor((storeDuration % 3600) / 60)}m`
     : "--";
 
-  let displayCondition = "Good";
-  let displayConditionColor = "text-green-500";
+  let displayRisk = "--";
+  let displayRiskColor = "text-muted-foreground";
 
-  if (
-    accidentZones.length > 0 &&
-    accidentZones.some((zone) => zone.severity === "high")
-  ) {
-    displayCondition = "Risky";
-    displayConditionColor = "text-red-500";
-  } else if (accidentZones.length > 0) {
-    displayCondition = "Caution";
-    displayConditionColor = "text-amber-500";
+  if (journey.analysis) {
+    const riskLevel = journey.analysis.overallRiskLevel;
+    displayRisk = riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1);
+
+    switch (riskLevel) {
+      case "low":
+        displayRiskColor = "text-green-500";
+        break;
+      case "medium":
+        displayRiskColor = "text-yellow-500";
+        break;
+      case "high":
+        displayRiskColor = "text-orange-500";
+        break;
+      case "critical":
+        displayRiskColor = "text-red-500";
+        break;
+    }
   }
 
   return (
@@ -324,12 +334,12 @@ export function RoutePlanner({
 
             <div>
 
-              <div className={`text-base font-bold truncate ${displayConditionColor}`}>
-                {displayCondition}
+              <div className={`text-base font-bold truncate ${displayRiskColor}`}>
+                {displayRisk}
               </div>
 
               <div className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium">
-                Conditions
+                Risk
               </div>
 
             </div>
