@@ -1,20 +1,9 @@
 import { create } from "zustand"
-import type { AccidentZone } from "@/lib/accidents"
-import type { Journey, WeatherPoint, RouteCheckpoint, JourneyAnalysis } from "@/lib/journey"
+import type { Journey, RouteCheckpoint, JourneyAnalysis } from "@/lib/journey"
 import { createEmptyJourney } from "@/lib/journey"
 
 interface RouteStore {
   journey: Journey
-
-  // Computed fields for backward compatibility
-  routeGeoJSON: any
-  weatherPoints: WeatherPoint[]
-  distance: number
-  duration: number
-  travelAdvice: string
-  accidentZones: AccidentZone[]
-  departureDate: string
-  departureTime: string
 
   setJourney: (journey: Journey) => void
 
@@ -24,11 +13,11 @@ interface RouteStore {
   setAnalysis: (analysis: JourneyAnalysis) => void
 
   setRouteGeoJSON: (data: any) => void
-  setWeatherPoints: (points: WeatherPoint[]) => void
+  setWeatherPoints: (points: any[]) => void
   setDistance: (distance: number) => void
   setDuration: (duration: number) => void
   setTravelAdvice: (advice: string) => void
-  setAccidentZones: (zones: AccidentZone[]) => void
+  setAccidentZones: (zones: any[]) => void
   setDepartureDate: (date: string) => void
   setDepartureTime: (time: string) => void
 }
@@ -42,75 +31,49 @@ export const useRouteStore =
 
       journey: emptyJourney,
 
-      // Legacy fields for backward compatibility - derived from journey
-      routeGeoJSON: emptyJourney.routeGeoJSON,
-      weatherPoints: emptyJourney.weatherPoints,
-      distance: emptyJourney.distance,
-      duration: emptyJourney.duration,
-      travelAdvice: emptyJourney.travelAdvice,
-      accidentZones: emptyJourney.accidentZones,
-      departureDate: emptyJourney.departureDate,
-      departureTime: emptyJourney.departureTime,
-
       setJourney: (journey) =>
-        set((state) => ({
-          journey,
-          routeGeoJSON: journey.routeGeoJSON,
-          weatherPoints: journey.weatherPoints,
-          distance: journey.distance,
-          duration: journey.duration,
-          travelAdvice: journey.travelAdvice,
-          accidentZones: journey.accidentZones,
-          departureDate: journey.departureDate,
-          departureTime: journey.departureTime,
+        set(() => ({
+          journey
         })),
 
       setRouteGeoJSON: (data) =>
         set((state) => ({
-          journey: { ...state.journey, routeGeoJSON: data },
-          routeGeoJSON: data
+          journey: { ...state.journey, routeGeoJSON: data }
         })),
 
       setWeatherPoints: (points) =>
         set((state) => ({
-          journey: { ...state.journey, weatherPoints: points },
-          weatherPoints: points
+          journey: { ...state.journey, weatherPoints: points }
         })),
 
       setDistance: (distance) =>
         set((state) => ({
-          journey: { ...state.journey, distance },
-          distance
+          journey: { ...state.journey, distance }
         })),
 
       setDuration: (duration) =>
         set((state) => ({
-          journey: { ...state.journey, duration },
-          duration
+          journey: { ...state.journey, duration }
         })),
 
       setTravelAdvice: (advice) =>
         set((state) => ({
-          journey: { ...state.journey, travelAdvice: advice },
-          travelAdvice: advice
+          journey: { ...state.journey, travelAdvice: advice }
         })),
 
       setAccidentZones: (zones) =>
         set((state) => ({
-          journey: { ...state.journey, accidentZones: zones },
-          accidentZones: zones
+          journey: { ...state.journey, accidentZones: zones }
         })),
 
       setDepartureDate: (date) =>
         set((state) => ({
-          journey: { ...state.journey, departureDate: date },
-          departureDate: date
+          journey: { ...state.journey, departureDate: date }
         })),
 
       setDepartureTime: (time) =>
         set((state) => ({
-          journey: { ...state.journey, departureTime: time },
-          departureTime: time
+          journey: { ...state.journey, departureTime: time }
         })),
 
       setJourneyOrigin: (origin) =>

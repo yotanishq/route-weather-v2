@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteStore } from "@/store/route-store"
 import {
   formatVisibilityKm,
   formatUvIndex,
@@ -11,6 +12,22 @@ import {
   getWeatherEmoji,
   getWindDirection
 } from "@/lib/weather-panel-utils"
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
+}
 
 interface WeatherDetailPanelProps {
   point: any
@@ -54,33 +71,44 @@ function MetricCard({
   )
 }
 
-function getAvailableMetrics(data: any) {
+function getAvailableMetrics(data: any, forecast?: any) {
   const metrics: Array<{ label: string; value: string; valueClassName?: string }> = []
   const main = data.main
   const wind = data.wind
   const airQuality = data.air_quality
 
+  // Use forecast data if available, otherwise use current weather data
+  const temperature = forecast?.temperature ?? main?.temp
+  const feelsLike = forecast?.feelsLike ?? main?.feels_like
+  const humidity = forecast?.humidity ?? main?.humidity
+  const windSpeed = forecast?.windSpeed ?? wind?.speed
+  const visibility = forecast?.visibility ?? data.visibility
+  const precipitation = forecast?.precipitationProbability
+
   // Primary metrics (always try to include these)
-  if (main?.humidity !== undefined && main.humidity !== null) {
-    metrics.push({ label: "Humidity", value: `${main.humidity}%` })
+  if (humidity !== undefined && humidity !== null) {
+    metrics.push({ label: "Humidity", value: `${humidity}%` })
   }
-  if (wind?.speed !== undefined && wind.speed !== null) {
-    metrics.push({ label: "Wind", value: `${wind.speed} m/s` })
+  if (windSpeed !== undefined && windSpeed !== null) {
+    metrics.push({ label: "Wind", value: `${windSpeed} m/s` })
   }
-  if (main?.feels_like !== undefined && main.feels_like !== null) {
-    metrics.push({ 
-      label: "Feels Like", 
-      value: `${Math.round(main.feels_like)}°`,
+  if (feelsLike !== undefined && feelsLike !== null) {
+    metrics.push({
+      label: "Feels Like",
+      value: `${Math.round(feelsLike)}°`,
       valueClassName: "text-cyan-400"
     })
   }
-  if (data.visibility !== undefined && data.visibility !== null) {
-    metrics.push({ label: "Visibility", value: formatVisibilityKm(data.visibility) })
+  if (visibility !== undefined && visibility !== null) {
+    metrics.push({ label: "Visibility", value: formatVisibilityKm(visibility) })
+  }
+  if (precipitation !== undefined && precipitation !== null) {
+    metrics.push({ label: "Precipitation", value: `${precipitation}%` })
   }
   if (airQuality) {
     const label = getAirQualityLabel(airQuality)
-    metrics.push({ 
-      label: "Air Quality", 
+    metrics.push({
+      label: "Air Quality",
       value: label,
       valueClassName: getAirQualityColorClass(label)
     })
@@ -120,11 +148,20 @@ export default function WeatherDetailPanel({
   onClose,
   compact = false
 }: WeatherDetailPanelProps) {
+  const journey = useRouteStore((state) => state.journey)
   const data = point.weather
   const condition = data.weather[0]
   const travelInsight = generateTravelInsight(data)
   const weatherEmoji = getWeatherEmoji(condition.main)
-  const metrics = getAvailableMetrics(data)
+
+  // Use the checkpoint reference attached to the marker
+  const matchingCheckpoint = (point as any).checkpoint
+
+  const forecast = matchingCheckpoint?.forecast
+  const isForecast = forecast !== null && forecast !== undefined
+  const forecastTime = forecast?.forecastTime
+  const eta = matchingCheckpoint?.estimatedArrivalTime
+  const metrics = getAvailableMetrics(data, forecast)
 
   return (
     <div
@@ -164,6 +201,39 @@ export default function WeatherDetailPanel({
           >
             {condition.main}
           </div>
+          {isForecast && forecastTime && (
+            <div
+              className={
+                compact
+                  ? "mt-0.5 text-[9px] text-cyan-400/70"
+                  : "mt-0.5 text-[10px] text-cyan-400/70"
+              }
+            >
+              Forecast for {formatDate(forecastTime)} at {formatTime(forecastTime)}
+            </div>
+          )}
+          {eta && (
+            <div
+              className={
+                compact
+                  ? "mt-0.5 text-[9px] text-emerald-400/70"
+                  : "mt-0.5 text-[10px] text-emerald-400/70"
+              }
+            >
+              ETA: {formatDate(eta)} at {formatTime(eta)}
+            </div>
+          )}
+          {!isForecast && matchingCheckpoint && (
+            <div
+              className={
+                compact
+                  ? "mt-0.5 text-[9px] text-amber-400/70"
+                  : "mt-0.5 text-[10px] text-amber-400/70"
+              }
+            >
+              Forecast unavailable beyond horizon
+            </div>
+          )}
         </div>
 
         <button
@@ -290,7 +360,7 @@ export default function WeatherDetailPanel({
           }
         >
           <div className="text-[8px] font-semibold uppercase tracking-widest text-white/35">
-            AI Travel Insight
+            Travel Impact
           </div>
           <p
             className={
@@ -299,7 +369,9 @@ export default function WeatherDetailPanel({
                 : "mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/60"
             }
           >
-            {travelInsight}
+            {journey.analysis?.warnings && journey.analysis.warnings.length > 0
+              ? journey.analysis.warnings[0].description
+              : travelInsight}
           </p>
         </div>
       </div>

@@ -38,13 +38,13 @@ export function RoutePlanner({
   condition,
   conditionColor,
 }: RoutePlannerProps) {
-  const storeDistance = useRouteStore((state) => state.distance);
-  const storeDuration = useRouteStore((state) => state.duration);
-  const accidentZones = useRouteStore((state) => state.accidentZones);
   const journey = useRouteStore((state) => state.journey);
 
-  const departureDate = useRouteStore((state) => state.departureDate);
-  const departureTime = useRouteStore((state) => state.departureTime);
+  const storeDistance = journey.distance;
+  const storeDuration = journey.duration;
+  const accidentZones = journey.accidentZones;
+  const departureDate = journey.departureDate;
+  const departureTime = journey.departureTime;
   const setDepartureDate = useRouteStore((state) => state.setDepartureDate);
   const setDepartureTime = useRouteStore((state) => state.setDepartureTime);
 

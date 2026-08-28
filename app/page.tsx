@@ -21,7 +21,12 @@ export default function HomePage() {
   const [triggerRoute, setTriggerRoute] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  const { distance, duration, travelAdvice, weatherPoints, setJourneyOrigin, setJourneyDestination } = useRouteStore()
+  const journey = useRouteStore((state) => state.journey)
+  const { setJourneyOrigin, setJourneyDestination } = useRouteStore()
+  const distance = journey.distance
+  const duration = journey.duration
+  const travelAdvice = journey.travelAdvice
+  const weatherPoints = journey.weatherPoints
 
   function handleGenerateRoute() {
     setJourneyOrigin(startPlace)

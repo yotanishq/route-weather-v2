@@ -142,10 +142,10 @@ export function AnalyticsOverlay({
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const journey = useRouteStore((state) => state.journey)
-  const accidentZones = useRouteStore((state) => state.accidentZones)
-  const weatherPoints = useRouteStore((state) => state.weatherPoints)
-  const storeDistance = useRouteStore((state) => state.distance)
-  const storeDuration = useRouteStore((state) => state.duration)
+  const accidentZones = journey.accidentZones
+  const weatherPoints = journey.weatherPoints
+  const storeDistance = journey.distance
+  const storeDuration = journey.duration
 
   const formattedStoreDuration = formatDuration(storeDuration)
   const travelInsight = getTravelAdvice(accidentZones, weatherPoints)

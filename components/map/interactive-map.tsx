@@ -20,6 +20,19 @@ import {
   getRiskScore
 } from "@/lib/accident-incident-copy"
 
+// Helper function to calculate distance between coordinates
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371 // Earth's radius in km
+  const toRadians = (degrees: number) => degrees * (Math.PI / 180)
+  const dLat = toRadians(lat2 - lat1)
+  const dLon = toRadians(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 import Map, {
   Marker,
   NavigationControl,
@@ -82,14 +95,8 @@ export function InteractiveMap({
 
   const [showAccidentLayer, setShowAccidentLayer] = useState(false)
 
+  const journey = useRouteStore((state) => state.journey)
   const {
-    routeGeoJSON,
-    weatherPoints,
-    distance,
-    duration,
-    accidentZones,
-    departureDate,
-    departureTime,
     setRouteGeoJSON,
     setWeatherPoints,
     setDistance,
@@ -98,6 +105,14 @@ export function InteractiveMap({
     setCheckpoints,
     setAnalysis
   } = useRouteStore()
+
+  const routeGeoJSON = journey.routeGeoJSON
+  const weatherPoints = journey.weatherPoints
+  const distance = journey.distance
+  const duration = journey.duration
+  const accidentZones = journey.accidentZones
+  const departureDate = journey.departureDate
+  const departureTime = journey.departureTime
 
   const {
     mapMode,
@@ -276,7 +291,33 @@ export function InteractiveMap({
 
         })
 
-      setWeatherPoints(dedupedWeatherData)
+      // Attach nearest Journey checkpoint to each weather marker
+      const weatherDataWithCheckpoints = dedupedWeatherData.map((point) => {
+        // Find the checkpoint with minimum geographic distance
+        let nearestCheckpoint: any = null
+        let minDistance = Infinity
+
+        for (const checkpoint of checkpointsWithForecast) {
+          const distance = haversineDistance(
+            point.coord[1], // latitude
+            point.coord[0], // longitude
+            checkpoint.latitude,
+            checkpoint.longitude
+          )
+
+          if (distance < minDistance) {
+            minDistance = distance
+            nearestCheckpoint = checkpoint
+          }
+        }
+
+        return {
+          ...point,
+          checkpoint: nearestCheckpoint
+        }
+      })
+
+      setWeatherPoints(weatherDataWithCheckpoints)
 
       const tomtomKey =
         process.env.NEXT_PUBLIC_TOMTOM_API_KEY ||

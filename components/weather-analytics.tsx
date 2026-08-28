@@ -215,10 +215,8 @@ function WeatherMetric({
 
 export function WeatherAnalytics() {
 
-  
-  const {
-    weatherPoints
-  } = useRouteStore()
+  const journey = useRouteStore((state) => state.journey)
+  const weatherPoints = journey.weatherPoints
   const temperatureData =
   weatherPoints.map(
     (point, index) => ({
