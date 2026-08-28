@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,6 @@ import {
   Calendar,
   Clock,
   Plus,
-  Sparkles,
   Route,
 } from "lucide-react";
 import { useRouteStore } from "@/store/route-store";
@@ -38,27 +38,102 @@ export function RoutePlanner({
   condition,
   conditionColor,
 }: RoutePlannerProps) {
-  const storeDistance = useRouteStore((state) => state.distance);
-  const storeDuration = useRouteStore((state) => state.duration);
-  const accidentZones = useRouteStore((state) => state.accidentZones);
+  const journey = useRouteStore((state) => state.journey);
+
+  const storeDistance = journey.distance;
+  const storeDuration = journey.duration;
+  const accidentZones = journey.accidentZones;
+  const departureDate = journey.departureDate;
+  const departureTime = journey.departureTime;
+  const setDepartureDate = useRouteStore((state) => state.setDepartureDate);
+  const setDepartureTime = useRouteStore((state) => state.setDepartureTime);
+
+  const [dateError, setDateError] = useState("");
+  const [timeError, setTimeError] = useState("");
+
+  function validateDeparture() {
+    let hasError = false;
+
+    // Validate date
+    if (!departureDate) {
+      setDateError("Please select a departure date");
+      hasError = true;
+    } else {
+      const selectedDate = new Date(departureDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        setDateError("Departure date cannot be in the past");
+        hasError = true;
+      } else {
+        setDateError("");
+      }
+    }
+
+    // Validate time
+    if (!departureTime) {
+      setTimeError("Please select a departure time");
+      hasError = true;
+    } else {
+      const selectedDateTime = new Date(`${departureDate}T${departureTime}`);
+      const now = new Date();
+      
+      if (selectedDateTime < now) {
+        setTimeError("Departure time cannot be in the past");
+        hasError = true;
+      } else {
+        setTimeError("");
+      }
+    }
+
+    return !hasError;
+  }
+
+  function handleGenerateRoute() {
+    if (validateDeparture()) {
+      onGenerateRoute();
+    }
+  }
+
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setDepartureDate(e.target.value);
+    if (dateError) setDateError("");
+  }
+
+  function handleTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setDepartureTime(e.target.value);
+    if (timeError) setTimeError("");
+  }
+
+  const isFormValid = departureDate && departureTime && !dateError && !timeError;
 
   const displayDistance = storeDistance ? `${storeDistance} km` : "--";
   const displayDuration = storeDuration
     ? `${Math.floor(storeDuration / 3600)}h ${Math.floor((storeDuration % 3600) / 60)}m`
     : "--";
 
-  let displayCondition = "Good";
-  let displayConditionColor = "text-green-500";
+  let displayRisk = "--";
+  let displayRiskColor = "text-muted-foreground";
 
-  if (
-    accidentZones.length > 0 &&
-    accidentZones.some((zone) => zone.severity === "high")
-  ) {
-    displayCondition = "Risky";
-    displayConditionColor = "text-red-500";
-  } else if (accidentZones.length > 0) {
-    displayCondition = "Caution";
-    displayConditionColor = "text-amber-500";
+  if (journey.analysis) {
+    const riskLevel = journey.analysis.overallRiskLevel;
+    displayRisk = riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1);
+
+    switch (riskLevel) {
+      case "low":
+        displayRiskColor = "text-green-500";
+        break;
+      case "medium":
+        displayRiskColor = "text-yellow-500";
+        break;
+      case "high":
+        displayRiskColor = "text-orange-500";
+        break;
+      case "critical":
+        displayRiskColor = "text-red-500";
+        break;
+    }
   }
 
   return (
@@ -167,8 +242,9 @@ export function RoutePlanner({
 
             <Input
               type="date"
-              className="pl-14 h-12 bg-slate-50/80 border-slate-200 rounded-2xl text-sm focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
-              defaultValue={new Date().toISOString().split("T")[0]}
+              value={departureDate}
+              onChange={handleDateChange}
+              className={`pl-14 h-12 bg-slate-50/80 border-slate-200 rounded-2xl text-sm focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/10 ${dateError ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10' : ''}`}
             />
 
           </div>
@@ -181,13 +257,26 @@ export function RoutePlanner({
 
             <Input
               type="time"
-              className="pl-14 h-12 bg-slate-50/80 border-slate-200 rounded-2xl text-sm focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
-              defaultValue="09:00"
+              value={departureTime}
+              onChange={handleTimeChange}
+              className={`pl-14 h-12 bg-slate-50/80 border-slate-200 rounded-2xl text-sm focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/10 ${timeError ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10' : ''}`}
             />
 
           </div>
 
         </div>
+
+        {/* Validation Messages */}
+        {(dateError || timeError) && (
+          <div className="mb-5 space-y-1">
+            {dateError && (
+              <p className="text-xs text-red-500">{dateError}</p>
+            )}
+            {timeError && (
+              <p className="text-xs text-red-500">{timeError}</p>
+            )}
+          </div>
+        )}
 
         {/* BUTTON */}
 
@@ -197,8 +286,9 @@ export function RoutePlanner({
         >
 
           <Button
-            onClick={onGenerateRoute}
-            className="w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white font-medium shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30"
+            onClick={handleGenerateRoute}
+            disabled={!isFormValid}
+            className={`w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white font-medium shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 ${!isFormValid ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
 
             <Route className="w-4 h-4 mr-2" />
@@ -244,12 +334,12 @@ export function RoutePlanner({
 
             <div>
 
-              <div className={`text-base font-bold truncate ${displayConditionColor}`}>
-                {displayCondition}
+              <div className={`text-base font-bold truncate ${displayRiskColor}`}>
+                {displayRisk}
               </div>
 
               <div className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium">
-                Conditions
+                Risk
               </div>
 
             </div>
@@ -258,27 +348,6 @@ export function RoutePlanner({
 
         </motion.div>
 
-        {/* AI SUGGESTION */}
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          whileHover={{ scale: 1.01 }}
-          className="mt-4 flex items-center gap-2 p-3 bg-primary/5 rounded-xl border border-primary/10 cursor-pointer"
-        >
-
-          <Sparkles className="w-4 h-4 text-primary" />
-
-          <span className="text-xs text-muted-foreground">
-            AI suggests departing at{" "}
-            <span className="font-medium text-foreground">
-              6:00 AM
-            </span>{" "}
-            for optimal conditions
-          </span>
-
-        </motion.div>
 
       </div>
     </motion.div>

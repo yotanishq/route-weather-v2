@@ -1,86 +1,100 @@
 import { create } from "zustand"
-import type { AccidentZone } from "@/lib/accidents"
+import type { Journey, RouteCheckpoint, JourneyAnalysis } from "@/lib/journey"
+import { createEmptyJourney } from "@/lib/journey"
 
 interface RouteStore {
+  journey: Journey
 
-  routeGeoJSON: any
-  weatherPoints: any[]
+  setJourney: (journey: Journey) => void
 
-  distance: number
-  duration: number
+  setJourneyOrigin: (origin: string) => void
+  setJourneyDestination: (destination: string) => void
+  setCheckpoints: (checkpoints: RouteCheckpoint[]) => void
+  setAnalysis: (analysis: JourneyAnalysis) => void
 
-  travelAdvice: string
-
-  accidentZones: AccidentZone[]
-
-  setRouteGeoJSON: (
-    data: any
-  ) => void
-
-  setWeatherPoints: (
-    points: any[]
-  ) => void
-
-  setDistance: (
-    distance: number
-  ) => void
-
-  setDuration: (
-    duration: number
-  ) => void
-
-  setTravelAdvice: (
-    advice: string
-  ) => void
-
-  setAccidentZones: (
-    zones: AccidentZone[]
-  ) => void
+  setRouteGeoJSON: (data: any) => void
+  setWeatherPoints: (points: any[]) => void
+  setDistance: (distance: number) => void
+  setDuration: (duration: number) => void
+  setTravelAdvice: (advice: string) => void
+  setAccidentZones: (zones: any[]) => void
+  setDepartureDate: (date: string) => void
+  setDepartureTime: (time: string) => void
 }
 
 export const useRouteStore =
-  create<RouteStore>((set) => ({
+  create<RouteStore>((set) => {
 
-    routeGeoJSON: null,
+    const emptyJourney = createEmptyJourney()
 
-    weatherPoints: [],
+    return {
 
-    distance: 0,
+      journey: emptyJourney,
 
-    duration: 0,
+      setJourney: (journey) =>
+        set(() => ({
+          journey
+        })),
 
-    travelAdvice: "",
+      setRouteGeoJSON: (data) =>
+        set((state) => ({
+          journey: { ...state.journey, routeGeoJSON: data }
+        })),
 
-    accidentZones: [],
+      setWeatherPoints: (points) =>
+        set((state) => ({
+          journey: { ...state.journey, weatherPoints: points }
+        })),
 
-    setRouteGeoJSON: (data) =>
-      set({
-        routeGeoJSON: data
-      }),
+      setDistance: (distance) =>
+        set((state) => ({
+          journey: { ...state.journey, distance }
+        })),
 
-    setWeatherPoints: (points) =>
-      set({
-        weatherPoints: points
-      }),
+      setDuration: (duration) =>
+        set((state) => ({
+          journey: { ...state.journey, duration }
+        })),
 
-    setDistance: (distance) =>
-      set({
-        distance
-      }),
+      setTravelAdvice: (advice) =>
+        set((state) => ({
+          journey: { ...state.journey, travelAdvice: advice }
+        })),
 
-    setDuration: (duration) =>
-      set({
-        duration
-      }),
+      setAccidentZones: (zones) =>
+        set((state) => ({
+          journey: { ...state.journey, accidentZones: zones }
+        })),
 
-    setTravelAdvice: (advice) =>
-      set({
-        travelAdvice: advice
-      }),
+      setDepartureDate: (date) =>
+        set((state) => ({
+          journey: { ...state.journey, departureDate: date }
+        })),
 
-    setAccidentZones: (zones) =>
-      set({
-        accidentZones: zones
-      })
+      setDepartureTime: (time) =>
+        set((state) => ({
+          journey: { ...state.journey, departureTime: time }
+        })),
 
-  }))
+      setJourneyOrigin: (origin) =>
+        set((state) => ({
+          journey: { ...state.journey, origin }
+        })),
+
+      setJourneyDestination: (destination) =>
+        set((state) => ({
+          journey: { ...state.journey, destination }
+        })),
+
+      setCheckpoints: (checkpoints) =>
+        set((state) => ({
+          journey: { ...state.journey, checkpoints }
+        })),
+
+      setAnalysis: (analysis) =>
+        set((state) => ({
+          journey: { ...state.journey, analysis }
+        }))
+
+    }
+  })

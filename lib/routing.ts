@@ -1,6 +1,4 @@
-const GRAPHHOPPER_API_KEY =
-  process.env
-    .NEXT_PUBLIC_GRAPHHOPPER_KEY
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:50001';
 
 /* GEOCODING */
 
@@ -8,27 +6,27 @@ export async function getCoordinates(
   place: string
 ): Promise<[number, number] | null>{
 
-  const res = await fetch(
+  try {
+    const res = await fetch(
+      `${BACKEND_URL}/api/geocode?q=${encodeURIComponent(place)}`
+    )
 
-    `https://graphhopper.com/api/1/geocode?q=${encodeURIComponent(
-      place
-    )}&limit=1&key=${GRAPHHOPPER_API_KEY}`
+    if (!res.ok) {
+      console.error('Geocoding failed:', res.status, res.statusText);
+      return null;
+    }
 
-  )
+    const data = await res.json()
 
-  const data = await res.json()
+    if (!data.coordinates) {
+      return null
+    }
 
-  if (
-    !data.hits ||
-    data.hits.length === 0
-  ) {
-    return null
+    return data.coordinates as [number, number]
+  } catch (error) {
+    console.error('Error in getCoordinates:', error);
+    return null;
   }
-
-  return [
-    data.hits[0].point.lng,
-    data.hits[0].point.lat
-  ]
 }
 
 /* ROUTING */
@@ -38,51 +36,21 @@ export async function getRoute(
   end: [number, number]
 ) {
 
-  const res = await fetch(
+  try {
+    const res = await fetch(
+      `${BACKEND_URL}/api/route?start=${start[0]},${start[1]}&end=${end[0]},${end[1]}`
+    )
 
-    `https://graphhopper.com/api/1/route?point=${start[1]},${start[0]}&point=${end[1]},${end[0]}&vehicle=car&points_encoded=false&key=${GRAPHHOPPER_API_KEY}`
+    if (!res.ok) {
+      console.error('Routing failed:', res.status, res.statusText);
+      throw new Error('Failed to calculate route');
+    }
 
-  )
+    const data = await res.json()
 
-  const data = await res.json()
-
-  /* CONVERT TO GEOJSON */
-
-  return {
-
-    type: "FeatureCollection",
-
-    features: [
-
-      {
-
-        type: "Feature",
-
-        properties: {
-
-          summary: {
-            distance:
-              data.paths[0].distance,
-
-            duration:
-              data.paths[0].time / 1000
-          }
-
-        },
-
-        geometry: {
-
-          type: "LineString",
-
-          coordinates:
-            data.paths[0]
-              .points.coordinates
-        }
-
-      }
-
-    ]
-
+    return data
+  } catch (error) {
+    console.error('Error in getRoute:', error);
+    throw error;
   }
-
 }

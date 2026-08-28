@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, MapPin, Cloud, Zap } from "lucide-react";
+import { MapPin, Cloud, Zap } from "lucide-react";
 
 export function HeroSection() {
   return (
@@ -49,23 +49,6 @@ export function HeroSection() {
       
       <div className="relative max-w-7xl mx-auto">
         <div className="text-center max-w-4xl mx-auto">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm mb-8"
-          >
-            <div className="w-5 h-5 rounded-full bg-gradient-to-r from-primary to-emerald-500 flex items-center justify-center">
-              <Sparkles className="w-3 h-3 text-white" />
-            </div>
-            <span className="text-sm font-medium text-foreground">
-              AI-Powered Travel Intelligence
-            </span>
-            <span className="text-xs text-muted-foreground px-2 py-0.5 bg-slate-100 rounded-full">
-              v2.0
-            </span>
-          </motion.div>
 
           {/* Heading */}
           <motion.h1

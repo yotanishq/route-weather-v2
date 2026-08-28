@@ -12,14 +12,26 @@ import { AccidentLayer } from "./accident-layer"
 import AccidentDetailPanel from "./accident-detail-panel"
 import { FullscreenMapLayout } from "./fullscreen-map-layout"
 import {
-  getAccidentsAlongRoute,
-  type AccidentZone as RouteAccidentZone
+  getAccidentsAlongRoute
 } from "@/lib/accidents"
+import type { AccidentZone as RouteAccidentZone } from "@/lib/accidents"
 import {
   getMarkerPresentation,
   getRiskScore
 } from "@/lib/accident-incident-copy"
-import { analyzeRouteDanger } from "@/lib/route-danger-detection"
+
+// Helper function to calculate distance between coordinates
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371 // Earth's radius in km
+  const toRadians = (degrees: number) => degrees * (Math.PI / 180)
+  const dLat = toRadians(lat2 - lat1)
+  const dLon = toRadians(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
 
 import Map, {
   Marker,
@@ -34,7 +46,9 @@ import "maplibre-gl/dist/maplibre-gl.css"
 import { AnalyticsOverlay } from "./analytics-overlay"
 
 import { getCoordinates, getRoute } from "@/lib/routing"
-import { getWeather } from "@/lib/weather"
+import { getWeather, getForecast } from "@/lib/weather"
+import { generateCheckpoints, findClosestForecast, groupCheckpointsByLocation } from "@/lib/journey"
+import { generateJourneyAnalysis } from "@/lib/journey-analysis"
 
 import {
   useRouteStore
@@ -81,20 +95,24 @@ export function InteractiveMap({
 
   const [showAccidentLayer, setShowAccidentLayer] = useState(false)
 
+  const journey = useRouteStore((state) => state.journey)
   const {
-    routeGeoJSON,
-    weatherPoints,
-    distance,
-    duration,
-
     setRouteGeoJSON,
     setWeatherPoints,
     setDistance,
     setDuration,
-
-    accidentZones
-
+    setAccidentZones,
+    setCheckpoints,
+    setAnalysis
   } = useRouteStore()
+
+  const routeGeoJSON = journey.routeGeoJSON
+  const weatherPoints = journey.weatherPoints
+  const distance = journey.distance
+  const duration = journey.duration
+  const accidentZones = journey.accidentZones
+  const departureDate = journey.departureDate
+  const departureTime = journey.departureTime
 
   const {
     mapMode,
@@ -195,6 +213,43 @@ export function InteractiveMap({
       setDistance(parseFloat(distanceKm))
       setDuration(summary.duration)
 
+      // Generate checkpoints with ETA
+      const departureDateTime = new Date(`${departureDate}T${departureTime}`)
+      const checkpoints = generateCheckpoints(
+        coordinates,
+        parseFloat(distanceKm),
+        summary.duration,
+        departureDateTime
+      )
+
+      // Group checkpoints by location for efficient API calls
+      const checkpointGroups = groupCheckpointsByLocation(checkpoints)
+
+      // Fetch forecast for each location group
+      const checkpointsWithForecast = await Promise.all(
+        Array.from(checkpointGroups.entries()).map(async ([key, group]) => {
+          const representative = group[0]
+          try {
+            const forecasts = await getForecast(representative.latitude, representative.longitude)
+
+            // Match each checkpoint in the group to the closest forecast
+            return group.map(checkpoint => ({
+              ...checkpoint,
+              forecast: findClosestForecast(forecasts, checkpoint.estimatedArrivalTime)
+            }))
+          } catch (error) {
+            // If forecast fails, mark as unavailable
+            return group.map(checkpoint => ({
+              ...checkpoint,
+              forecast: null
+            }))
+          }
+        })
+      ).then(results => results.flat())
+
+      setCheckpoints(checkpointsWithForecast)
+
+      // Keep existing weather pipeline for backward compatibility
       const sampledPoints =
         coordinates.filter(
           (_: any, index: number) =>
@@ -236,7 +291,33 @@ export function InteractiveMap({
 
         })
 
-      setWeatherPoints(dedupedWeatherData)
+      // Attach nearest Journey checkpoint to each weather marker
+      const weatherDataWithCheckpoints = dedupedWeatherData.map((point) => {
+        // Find the checkpoint with minimum geographic distance
+        let nearestCheckpoint: any = null
+        let minDistance = Infinity
+
+        for (const checkpoint of checkpointsWithForecast) {
+          const distance = haversineDistance(
+            point.coord[1], // latitude
+            point.coord[0], // longitude
+            checkpoint.latitude,
+            checkpoint.longitude
+          )
+
+          if (distance < minDistance) {
+            minDistance = distance
+            nearestCheckpoint = checkpoint
+          }
+        }
+
+        return {
+          ...point,
+          checkpoint: nearestCheckpoint
+        }
+      })
+
+      setWeatherPoints(weatherDataWithCheckpoints)
 
       const tomtomKey =
         process.env.NEXT_PUBLIC_TOMTOM_API_KEY ||
@@ -248,6 +329,11 @@ export function InteractiveMap({
         tomtomKey
       )
       useRouteStore.getState().setAccidentZones(accidents)
+
+      // Generate journey analysis
+      const currentJourney = useRouteStore.getState().journey
+      const analysis = generateJourneyAnalysis(currentJourney)
+      setAnalysis(analysis)
 
       let dynamicRouteColor = "#34d399"
 
@@ -347,17 +433,14 @@ export function InteractiveMap({
   )
   const trafficIncidentCount = accidentZones.length - accidentProneZones.length
 
-  const dangerAnalysis = analyzeRouteDanger(
-    routeCoordinates as [number, number][],
-    accidentProneZones.map((zone, index) => ({
-      id: `tomtom-accident-${index}`,
-      name: zone.roadName,
-      coordinates: [zone.lng, zone.lat],
-      severity: zone.severity,
-      reason: zone.description,
-      riskScore: getRiskScore(zone)
-    }))
-  )
+  // Calculate safety score based on real TomTom incidents
+  const totalDangerZones = accidentProneZones.length
+  let routeSafetyScore = "Safe"
+  if (accidentProneZones.some(z => z.severity === "high")) {
+    routeSafetyScore = "High Risk"
+  } else if (accidentProneZones.length > 2) {
+    routeSafetyScore = "Moderate Risk"
+  }
 
   const hasStorm =
     weatherConditions.includes("Thunderstorm")
@@ -407,9 +490,9 @@ export function InteractiveMap({
       onExitFullscreen={onToggleFullscreen || (() => {})}
       distance={distance}
       duration={duration}
-      routeSafetyScore={dangerAnalysis.routeSafetyScore}
+      routeSafetyScore={routeSafetyScore}
       travelAdvice={travelAdvice}
-      totalDangerZones={dangerAnalysis.totalDangerZones}
+      totalDangerZones={totalDangerZones}
       adviceColor={adviceColor}
       mapMode={mapMode}
       setMapMode={setMapMode}

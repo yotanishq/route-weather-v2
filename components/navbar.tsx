@@ -9,7 +9,6 @@ import {
   X,
   Bell,
   ChevronDown,
-  Sparkles,
 } from "lucide-react";
 
 export function Navbar() {
@@ -38,9 +37,6 @@ export function Navbar() {
                 <div>
                   <span className="text-lg font-semibold text-foreground tracking-tight">
                     Aether
-                  </span>
-                  <span className="hidden sm:inline-block ml-2 text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
-                    PRO
                   </span>
                 </div>
               </motion.div>
@@ -90,18 +86,6 @@ export function Navbar() {
                 >
                   JD
                 </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button 
-                    size="sm" 
-                    className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white font-medium shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/25 gap-1.5"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Upgrade
-                  </Button>
-                </motion.div>
               </div>
 
               {/* Mobile Menu Button */}
@@ -138,12 +122,6 @@ export function Navbar() {
                           {item}
                         </Button>
                       ))}
-                      <div className="pt-3 border-t border-slate-100 mt-2">
-                        <Button className="w-full rounded-xl bg-gradient-to-r from-primary to-emerald-600 text-white gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5" />
-                          Upgrade to Pro
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 </motion.div>

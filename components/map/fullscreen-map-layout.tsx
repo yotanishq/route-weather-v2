@@ -54,8 +54,8 @@ function getWindDirection(degrees: number): string {
   return directions[index]
 }
 
-// Helper function to generate dynamic AI insights based on real weather data
-function generateAIInsight(weatherData?: any) {
+// Helper function to generate weather insights based on real weather data
+function generateWeatherInsight(weatherData?: any) {
   const hour = new Date().getHours()
   const isNight = hour >= 19 || hour <= 6
   
@@ -149,7 +149,7 @@ export function FullscreenMapLayout({
   trafficIncidentCount,
   weatherData
 }: FullscreenMapLayoutProps) {
-  const [aiInsight, setAIInsight] = useState(generateAIInsight(weatherData))
+  const [weatherInsight, setWeatherInsight] = useState(generateWeatherInsight(weatherData))
   const [isLoading, setIsLoading] = useState(false)
   const weatherCondition = weatherData?.weather?.[0]?.main
   const weatherEmoji = weatherCondition
@@ -161,7 +161,7 @@ export function FullscreenMapLayout({
   useEffect(() => {
     setIsLoading(true)
     // Update insight when weather data changes
-    setAIInsight(generateAIInsight(weatherData))
+    setWeatherInsight(generateWeatherInsight(weatherData))
     setIsLoading(false)
   }, [weatherData])
 
@@ -223,12 +223,12 @@ export function FullscreenMapLayout({
           </div>
         </div>
 
-        {/* AI Insights */}
+        {/* Weather Insights */}
         <div
           className="relative overflow-hidden rounded-xl p-[22px]"
           style={railCardSurface}
         >
-          <div className={sectionLabelClass}>AI Insights</div>
+          <div className={sectionLabelClass}>Weather Insights</div>
 
           {isLoading ? (
             <div className="grid grid-cols-[18px_1fr] gap-x-2 gap-y-1.5 text-left">
@@ -247,10 +247,10 @@ export function FullscreenMapLayout({
               <span
                 className={`text-xs font-semibold leading-snug ${adviceColor}`}
               >
-                {travelAdvice || aiInsight.mainInsight}
+                {travelAdvice || weatherInsight.mainInsight}
               </span>
               <p className="col-start-2 text-[11px] font-normal leading-relaxed text-white/35">
-                {aiInsight.secondaryInsight}
+                {weatherInsight.secondaryInsight}
               </p>
             </div>
           )}
@@ -364,70 +364,9 @@ export function FullscreenMapLayout({
                 }
               `}
             >
-              <span>Accident Zones</span>
+              <span>Road Events</span>
               <span className="text-[10px]">⚠️</span>
             </button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Bottom Cinematic Timeline */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 30 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 w-[650px]"
-      >
-        <div className="bg-black/60 backdrop-blur-xl rounded-xl p-4 border border-white/14 shadow-xl">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-[10px] text-white/25 font-bold tracking-[0.2em] uppercase">
-              Timeline
-            </div>
-            <div className="text-[9px] text-white/20">
-              Coming Soon
-            </div>
-          </div>
-
-          {/* Progress Bar with Glow */}
-          <div className="relative mb-3">
-            {/* Glow effect */}
-            <div className="absolute inset-0 h-1 bg-gradient-to-r from-emerald-500/25 to-cyan-500/25 blur-md rounded-full" />
-            
-            {/* Progress bar background */}
-            <div className="relative h-1 bg-white/6 rounded-full overflow-hidden">
-              {/* Progress fill with gradient */}
-              <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full" />
-            </div>
-          </div>
-
-          {/* Timeline Markers */}
-          <div className="flex items-center justify-between px-5">
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.5)]" />
-              <div className="text-[9px] text-white/30 font-medium">Start</div>
-            </div>
-            
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-              <div className="text-[9px] text-white/20 font-medium">Weather</div>
-            </div>
-            
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-              <div className="text-[9px] text-white/20 font-medium">Accident</div>
-            </div>
-            
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-              <div className="text-[9px] text-white/20 font-medium">Progress</div>
-            </div>
-            
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-              <div className="text-[9px] text-white/20 font-medium">End</div>
-            </div>
           </div>
         </div>
       </motion.div>

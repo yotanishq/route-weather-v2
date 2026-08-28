@@ -7,7 +7,6 @@ import {
   getSafetyWarning,
   getSeverityColor,
   getSeverityLabel,
-  getTravelRecommendation
 } from "@/lib/accident-incident-copy"
 
 interface AccidentDetailPanelProps {
@@ -108,14 +107,6 @@ export default function AccidentDetailPanel({
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white/[0.03] p-4">
-          <div className="text-[10px] text-white/40 font-semibold tracking-widest uppercase">
-            Travel recommendation
-          </div>
-          <div className="mt-2 text-sm text-white font-medium leading-relaxed">
-            {getTravelRecommendation(zone)}
-          </div>
-        </div>
 
         <div className="rounded-2xl bg-white/[0.03] p-4">
           <div className="text-[10px] text-white/40 font-semibold tracking-widest uppercase">
